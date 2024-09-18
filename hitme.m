@@ -2,6 +2,13 @@ hitme
 s = lspb(0, 1, steps); % Linear segment with parabolic blend from 0 to 1 over 'steps' steps
 qMatrix_trapz = nan(steps, 6); % Preallocate matrix for joint states
 
+L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+L3 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+L4 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+L5 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+
+
 % Generate trajectory for each joint using the trapezoidal profile
 for i = 1:steps
     qMatrix_trapz(i, :) = (1 - s(i)) * q1 + s(i) * q2;
