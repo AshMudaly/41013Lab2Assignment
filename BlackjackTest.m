@@ -1,4 +1,4 @@
-function blackjack()
+function BlackjackTest()
     clc;
     disp('Welcome to Blackjack!')
 
@@ -22,6 +22,12 @@ function blackjack()
         % Clear screen and show current hand again before each action
         clc;
         showHands(playerHand, dealerHand, cardNames, true);
+
+        % Check if player already has 5 cards
+        if length(playerHand) >= 5
+            disp('You have 5 cards. You must stand.');
+            break;
+        end
 
         choice = input('Do you want to (h)it or (s)tand? ', 's');
         if choice == 'h'
