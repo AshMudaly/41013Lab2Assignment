@@ -1,4 +1,4 @@
-SafeCo proposes to sell to the casino industry a robot called The SpinOMatic that can spin a Roulette table, dish our winnings, or take losses from the player. In addition, a DoBot with a gripper will also be able to play the game for a customer virtually, with a GUI to control what bets are placed and advise how much money is won/lost.
+SafeCo proposes to sell to the casino industry a robot called HitMe that can deal Blackjack, receive, and dish out chips accordingly. In addition, a DoBot with a suction cup will also be able to play the game for a customer virtually, with a GUI to control what bets are placed, to hit or check advise how much money is won/lost.
 
 Coding Standards:
 * Class def: ClassName
@@ -7,6 +7,6 @@ Coding Standards:
 
 
 Code Structure:
-* Class 1: DoBotGripper
-* Class 2: SpinOMatic (preliminary name)
-* Class 3: RouletteGame
+* Class 1: DoBotSuction
+* Class 2: HitMe (preliminary name)
+* Class 3: BlackjackGame
