@@ -58,7 +58,7 @@ Scaling Options
 * Image of Card shown on GUI from the DoBot
 * More blackjack options (Split, specific chip amounts, more players)
 * Real deck simiulation with image recognition
-* Player movement of hit and check with tapping on the table
+* Player movement of hit and 
 
  
 De-Scoping Options
@@ -66,5 +66,6 @@ De-Scoping Options
 * Simplify betting options to 1 chip size
 * Remove all image aquisition
 * Deck of cards only gets a random number, no suit or recognition of previous card being drawn
+*
 
 

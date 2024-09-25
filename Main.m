@@ -52,6 +52,8 @@ surf([2,2;2,2] ...
 
 
 player = DobotMagician(transl(0,-0.2,0.45)*trotz(-pi/2));
+home = transl(0,0,1)
+dealer = HitMeBot(home);
 qTest = [0,deg2rad(30),deg2rad(30),deg2rad(80),0];
 player.model.animate(qTest);
 
