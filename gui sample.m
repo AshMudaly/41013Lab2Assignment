@@ -13,7 +13,7 @@ Here's a brief outline of the steps and code that you'll need to implement in MA
 ### 2. **Add Properties to Store the Game State:**
    In the **Code View** of the App Designer, define the game state properties under the `properties` block. These will include the deck, player and dealer hands, and other variables needed to track the game progress.
 
-   ```matlab
+   gui
    properties (Access = private)
        deck % The shuffled deck
        playerHand % Player's hand
