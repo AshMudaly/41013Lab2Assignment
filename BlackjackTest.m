@@ -4,14 +4,14 @@ classdef BlackjackTest
         deck;           % Deck of cards
         cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'}; % Card names
     end
-
+    
     methods
         function obj = BlackjackTest()
             clc;
             disp('Welcome to Blackjack!');
             obj = obj.shuffleDeck();  % Shuffle the deck at the start
         end
-
+        
         % Function to start the game
         function play(obj)
             while obj.balance > 0
@@ -96,7 +96,7 @@ classdef BlackjackTest
                 end
             end
         end
-
+        
         % Shuffle the deck
         function obj = shuffleDeck(obj)
             % Initialize deck (1-10, J, Q, K represented by 10, Ace as 1)
@@ -122,6 +122,12 @@ classdef BlackjackTest
             if nargin < 3
                 numCards = 1; % Default to dealing 1 card
             end
+            
+            % Ensure we don't attempt to deal more cards than available
+            if numCards > length(obj.deck)
+                numCards = length(obj.deck);
+            end
+            
             hand = [hand, obj.deck(1:numCards)];  % Add card(s) to hand
             obj.deck(1:numCards) = [];  % Remove card(s) from deck
         end
@@ -155,7 +161,7 @@ classdef BlackjackTest
         function balanceChange = determineWinner(obj, playerHand, dealerHand, bet)
             playerTotal = obj.calculateTotal(playerHand);
             dealerTotal = obj.calculateTotal(dealerHand);
-
+    
             if playerTotal > dealerTotal
                 disp('You win!');
                 balanceChange = bet;  % Win the bet
