@@ -27,8 +27,8 @@ classdef BlackjackTest
                 clc;
                 disp(['Current balance: $', num2str(obj.balance)]);
 
-                % Get bet from the player
-                bet = obj.getBet();
+                % Get flexible bet from the player
+                bet = obj.getFlexibleBet();
                 disp(['You bet $', num2str(bet)]);
 
                 % Deal initial hands
@@ -77,7 +77,7 @@ classdef BlackjackTest
                         disp(['Dealer draws a card. Dealer''s cards: ', obj.handToString(obj.dealerHand), ' | Total: ', num2str(obj.calculateTotal(obj.dealerHand))]);
                     end
 
-                    % Check if dealer busts
+                    % Check dealer bust
                     if obj.calculateTotal(obj.dealerHand) > 21
                         disp('Dealer busts! You win.');
                         obj.balance = obj.balance + bet;
@@ -101,14 +101,14 @@ classdef BlackjackTest
             end
         end
 
-        % Method to get the player's bet
-        function bet = getBet(obj)
+        % Method to get the player's flexible bet
+        function bet = getFlexibleBet(obj)
             while true
-                bet = input('Choose your bet (1, 5, 10, 50, 100): ');
-                if ismember(bet, [1, 5, 10, 50, 100]) && bet <= obj.balance
+                bet = input(['Enter your bet (1 to ', num2str(obj.balance), '): ']);
+                if bet >= 1 && bet <= obj.balance
                     break;
                 else
-                    disp('Invalid bet. Please choose an available option that you can afford.');
+                    disp(['Invalid bet. Please enter a value between 1 and ', num2str(obj.balance)]);
                 end
             end
         end
