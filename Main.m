@@ -146,17 +146,58 @@ classdef Main < handle
         end
 %% Return To Home Function
         function ReturnToHome(self)
-            % Find the current position of the robot in q values
-            currentQ = GetJointState(self);
-            % Create a Jtraj matrix with 25 iterations from the current
-            % position to the safe/home position
-            moveQ = jtraj(currentQ,self.dealer.homeQ,25);
-            % Animate to the safe/home position
-            for i = 1:25
-                self.dealer.model.animate(moveQ(i,:));
+
+            % Currently working return to home
+
+            % % Find the current position of the robot in q values
+            % currentQ = GetJointState(self);
+            % % Create a Jtraj matrix with 25 iterations from the current
+            % % position to the safe/home position
+            % moveQ = jtraj(currentQ,self.dealer.homeQ,25);
+            % % Animate to the safe/home position
+            % for i = 1:25
+            %     self.dealer.model.animate(moveQ(i,:));
+            %     drawnow();
+            %     pause(0.1)
+            % end
+
+            % Atempting RMRC
+            deltaT = 0.1; % Time Step
+            epsilon = 1e-3 % Threshold for stopping condition
+            maxSteps = 100000; % Maximum number of itterations
+
+            % Find the current position of the robot and desired position
+            currentQ = GetJointState(self)
+            currentPos = GetPos(self);
+            desiredQ = self.dealer.homeQ;
+            desiredPos = self.dealer.model.fkine(desiredQ)
+            for i = 1:maxSteps
+                % Calculate the error in position and orientation
+                errorPos = tr2delta(currentPos, desiredPos);
+                % Check if the error is big enough to break out of the loop
+                if norm(errorPos) < epsilon
+                    break;
+                end
+                % Get the Jacobian at the current joint configuration
+                j = self.dealer.model.jacob0(currentQ);
+                % Compute the joint velocities using pseudoinverse of the
+                % Jacobian
+                lambda = 0.1; % Damping factor to avoid singularities
+                qdot = pinv(j + lambda * eye(size(j))) * errorPos(:); % Joint Velocities
+                % Update the currect join posiiotns using the caculated
+                % join velocities
+                currentQ = currentQ + qdot' * deltaT;
+                % Animate the robot at the new joint configuration
+                self.dealer.model.animate(currentQ);
                 drawnow();
-                pause(0.1)
+                pause(deltaT);
+                % Update the current end effector pos
+                currentPos = GetPos(self);
+
+                i
             end
+
+            
         end
     end
 end

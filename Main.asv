@@ -22,8 +22,7 @@ classdef Main < handle
             self.player = DobotMagician(transl(0,-0.2,0.45)*trotz(-pi/2));
             self.dealer = HitMeBot(transl(0,-1.4,0.45)*trotz(pi/2));
             self.player.model.animate([0,deg2rad(30),deg2rad(30),deg2rad(80),0]);
-            testhomeQ  = [0,pi/4,0,-pi/4,0,0,0];
-            self.dealer.model.animate(self.player.homeQ);
+            self.dealer.model.animate(self.dealer.homeQ);
             self.chipPosition = [0,-0.6,0.64];
             self.chip = PlaceObject('chip.ply', self.chipPosition);
             drawnow();
@@ -103,6 +102,19 @@ classdef Main < handle
 %% Pick up chip basic funciton
         function PickUpChip(self)
             currentQ = GetJointState(self);
+            newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
+            self.dealer.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,25);
+            for i =1:25
+                % Animate the LinearUR3e robot through each q value
+                self.dealer.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1)
+            end
+
+            currentQ = GetJointState(self);
             newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.065,0), currentQ);
             self.dealer.model.fkine(newQ)
             % Create Matrix of movement between start position and end
@@ -114,20 +126,65 @@ classdef Main < handle
                 drawnow();
                 pause(0.1)
             end
-        end
-%% Return To Home Function
-        function ReturnToHome(self)
-            % Find the current position of the robot in q values
+
             currentQ = GetJointState(self);
-            % Create a Jtraj matrix with 25 iterations from the current
-            % position to the safe/home position
-            moveQ = jtraj(currentQ,self.hitMeHome,25);
-            % Animate to the safe/home position
-            for i = 1:25
+            newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
+            self.dealer.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,25);
+            for i =1:25
+                % Animate the LinearUR3e robot through each q value
                 self.dealer.model.animate(moveQ(i,:));
+                delete(self.chip);
+                self.chip = PlaceObject('chip.ply', transl((GetPos(self).T) * (transl(0,0.065,0)))');
                 drawnow();
                 pause(0.1)
             end
+
+
+        end
+%% Return To Home Function
+        function ReturnToHome(self)
+
+            % Currently working return to home
+
+            % % Find the current position of the robot in q values
+            % currentQ = GetJointState(self);
+            % % Create a Jtraj matrix with 25 iterations from the current
+            % % position to the safe/home position
+            % moveQ = jtraj(currentQ,self.dealer.homeQ,25);
+            % % Animate to the safe/home position
+            % for i = 1:25
+            %     self.dealer.model.animate(moveQ(i,:));
+            %     drawnow();
+            %     pause(0.1)
+            % end
+
+            % Atempting RMRC
+            deltaT = 0.1; % Time Step
+            episilon = 1e-3; % Threshold for stopping condition
+            maxSteps = 100; % Maximum number of itterations
+
+            % Find the current position of the robot and desired position
+            currentPos = GetPos(self);
+            desiredQ = self.dealer.homeQ;
+            desiredPos = self.dealer.model.fkine(desiredQ);
+            for i = 1:maxSteps
+                % Calculate the error in position and orientation
+                errorPose = tr2delta(currentPos, desiredPos);
+                % Check if the error is big enough to break out of the loop
+                if norm(errorPose) < epsilon
+                    break;
+                end
+                j = self.dealer
+
+
+                drawnow();
+                pause(0.1)
+            end
+
+            
         end
     end
 end
