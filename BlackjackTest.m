@@ -4,27 +4,27 @@ classdef BlackjackTest
         deck;      % Deck of cards
         cardNames; % Card names
     end
-    
+
     methods
         % Constructor to initialize properties
         function obj = BlackjackTest()
-            clc;
             disp('Welcome to Blackjack!');
-            
+            pause(2);
+
             % Initialize properties inside constructor
             obj.balance = 100;  % Player's starting balance
             obj.cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'};
             obj = obj.shuffleDeck();  % Shuffle the deck at the start
         end
-        
+
         % Function to start the game
         function play(obj)
             while obj.balance > 0
                 clc;
                 disp(['Current balance: $', num2str(obj.balance)]);
 
-                % Flexible betting amount
-                bet = obj.getFlexibleBet();
+                % Betting amount
+                bet = obj.getBet();
                 disp(['You bet $', num2str(bet)]);
 
                 % Shuffle deck if fewer than 15 cards are left
@@ -101,7 +101,7 @@ classdef BlackjackTest
                 end
             end
         end
-        
+
         % Shuffle the deck
         function obj = shuffleDeck(obj)
             % Initialize deck (1-10, J, Q, K represented by 10, Ace as 1)
@@ -110,29 +110,38 @@ classdef BlackjackTest
             obj.deck = obj.deck(randperm(length(obj.deck)));  % Shuffle the deck
         end
 
-        % Helper function to get player's flexible bet
-        function bet = getFlexibleBet(obj)
+        % Helper function to get player's bet
+        function bet = getBet(obj)
             while true
-                bet = input(['Enter your bet (1 to ', num2str(obj.balance), '): ']);
-                if bet >= 1 && bet <= obj.balance
-                    break;
+                betInput = input(['Enter your bet (1 to ', num2str(obj.balance), '): '], 's'); % Take input as a string
+                bet = str2double(betInput);  % Convert input to a number
+
+                % Check if the conversion was successful and if the value is within the valid range
+                if isnan(bet) || ~isscalar(bet) || bet < 1 || bet > obj.balance
+                    disp(['Invalid input. Please enter a value between 1 and ', num2str(obj.balance), '.']);
+                    pause(2)
+                    clc;
                 else
-                    disp(['Invalid bet. Please enter a value between 1 and ', num2str(obj.balance)]);
+                    break;  % Valid input, exit the loop
                 end
+
+                disp(['Current balance: $', num2str(obj.balance)]);
+
             end
         end
+
 
         % Helper function to deal a card and update the deck
         function [hand, obj] = dealCard(obj, hand, numCards)
             if nargin < 3
                 numCards = 1; % Default to dealing 1 card
             end
-            
+
             % Ensure we don't attempt to deal more cards than available
             if numCards > length(obj.deck)
                 numCards = length(obj.deck);
             end
-            
+
             hand = [hand, obj.deck(1:numCards)];  % Add card(s) to hand
             obj.deck(1:numCards) = [];  % Remove card(s) from deck
 
@@ -172,7 +181,7 @@ classdef BlackjackTest
         function balanceChange = determineWinner(obj, playerHand, dealerHand, bet)
             playerTotal = obj.calculateTotal(playerHand);
             dealerTotal = obj.calculateTotal(dealerHand);
-    
+
             if playerTotal > dealerTotal
                 disp('You win!');
                 balanceChange = bet;  % Win the bet
