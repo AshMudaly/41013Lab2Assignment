@@ -26,7 +26,7 @@ classdef Main < handle
             axis([xLimits, yLimits, zLimits]);
 
             azimuth = 225;
-            elevation = 30
+            elevation = 30;
             view(azimuth, elevation)
 
             blackjackTable = PlaceObject('blackjackTable.ply', [0, -0.6, -1.2]);
