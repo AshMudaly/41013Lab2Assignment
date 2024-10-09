@@ -1,14 +1,19 @@
 classdef BlackjackTest
     properties
-        balance = 100;  % Player's starting balance
-        deck;           % Deck of cards
-        cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'}; % Card names
+        balance;   % Player's starting balance
+        deck;      % Deck of cards
+        cardNames; % Card names
     end
     
     methods
+        % Constructor to initialize properties
         function obj = BlackjackTest()
             clc;
             disp('Welcome to Blackjack!');
+            
+            % Initialize properties inside constructor
+            obj.balance = 100;  % Player's starting balance
+            obj.cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'};
             obj = obj.shuffleDeck();  % Shuffle the deck at the start
         end
         
@@ -130,6 +135,12 @@ classdef BlackjackTest
             
             hand = [hand, obj.deck(1:numCards)];  % Add card(s) to hand
             obj.deck(1:numCards) = [];  % Remove card(s) from deck
+
+            % Reshuffle if deck is empty
+            if isempty(obj.deck)
+                disp('Reshuffling deck...');
+                obj = obj.shuffleDeck();
+            end
         end
 
         % Helper function to calculate hand total
