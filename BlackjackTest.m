@@ -117,11 +117,9 @@ classdef BlackjackTest
             while true
                 betInput = input(['Enter your bet (1 to ', num2str(obj.balance), '): '], 's'); % Take input as a string
                 bet = str2double(betInput);  % Convert input to a number
-
                 % Check if the conversion was successful and if the value is within the valid range
                 if isnan(bet) || ~isscalar(bet) || bet < 1 || bet > obj.balance
                     disp(['Invalid input. Please enter a value between 1 and ', num2str(obj.balance), '.']);
-                    disp(['Current balance: $', num2str(obj.balance)]); % Display current balance here
                     pause(2);
                     clc;
                 else
