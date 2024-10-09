@@ -3,7 +3,13 @@ classdef Main < handle
 %#ok<*NOPRT>
 %#ok<*TRYNC>
     properties
-        robots % Constructor for controller class
+        player % DoBot Robot Object
+        dealer % HitMeBot Object
+        hitMeHome % HitMeBot home q posiiton
+        doBotHome % DoBotMagician home q position
+        chip % Test property for chip
+        chipPosition % Test property for chip position, initially only 1 pos
+        
     end
 
     methods
@@ -13,20 +19,20 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
-            self.robots = Controller();
+            drawnow();
         end
     end
+
     methods(Static)
         %% Generate Environment
         function Environment()
-            hold on
             xLimits = [-2, 2];
             yLimits = [-2, 2];
             zLimits = [0, 2];
             axis([xLimits, yLimits, zLimits]);
 
             azimuth = 225;
-            elevation = 30
+            elevation = 30;
             view(azimuth, elevation)
 
             blackjackTable = PlaceObject('blackjackTable.ply', [0, -0.6, -1.2]);
