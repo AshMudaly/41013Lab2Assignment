@@ -51,20 +51,22 @@ classdef BlackjackTest
                     end
 
                     choice = input('Do you want to (h)it or (s)tand? ', 's');
-                    if choice == 'h'
-                        [playerHand, obj] = obj.dealCard(playerHand);
-                        if obj.calculateTotal(playerHand) > 21
-                            clc;
-                            obj.showHands(playerHand, dealerHand, true);
-                            disp('Bust! You lose.');
-                            obj.balance = obj.balance - bet;
-                            disp(['New balance: $', num2str(obj.balance)]);
+
+                    switch choice
+                        case 'h'
+                            [playerHand, obj] = obj.dealCard(playerHand);
+                            if obj.calculateTotal(playerHand) > 21
+                                clc;
+                                obj.showHands(playerHand, dealerHand, true);
+                                disp('Bust! You lose.');
+                                obj.balance = obj.balance - bet;
+                                disp(['New balance: $', num2str(obj.balance)]);
+                                break;
+                            end
+                        case 's'
                             break;
-                        end
-                    elseif choice == 's'
-                        break;
-                    else
-                        disp('Invalid choice. Please type h to hit or s to stand.');
+                        otherwise
+                            disp('Invalid choice. Please type h to hit or s to stand.');
                     end
                 end
 
@@ -119,17 +121,14 @@ classdef BlackjackTest
                 % Check if the conversion was successful and if the value is within the valid range
                 if isnan(bet) || ~isscalar(bet) || bet < 1 || bet > obj.balance
                     disp(['Invalid input. Please enter a value between 1 and ', num2str(obj.balance), '.']);
-                    pause(2)
+                    disp(['Current balance: $', num2str(obj.balance)]); % Display current balance here
+                    pause(2);
                     clc;
                 else
                     break;  % Valid input, exit the loop
                 end
-
-                disp(['Current balance: $', num2str(obj.balance)]);
-
             end
         end
-
 
         % Helper function to deal a card and update the deck
         function [hand, obj] = dealCard(obj, hand, numCards)
