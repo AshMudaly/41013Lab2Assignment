@@ -135,6 +135,12 @@ classdef BlackjackTest
             
             hand = [hand, obj.deck(1:numCards)];  % Add card(s) to hand
             obj.deck(1:numCards) = [];  % Remove card(s) from deck
+
+            % Reshuffle if deck is empty
+            if isempty(obj.deck)
+                disp('Reshuffling deck...');
+                obj = obj.shuffleDeck();
+            end
         end
 
         % Helper function to calculate hand total
