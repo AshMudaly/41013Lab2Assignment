@@ -39,7 +39,7 @@ classdef BlackjackTest
 
                 % Dealer's turn if player hasn't busted
                 if ~playerBust
-                    obj.dealerTurn(dealerHand, bet);
+                    obj.dealerTurn(playerHand,dealerHand, bet);
                 end
 
                 % Ask if the player wants to continue
@@ -141,11 +141,10 @@ classdef BlackjackTest
         end
 
         % Helper function to handle dealer's turn
-        function dealerTurn(obj, dealerHand, bet)
+        function dealerTurn(obj, playerHand, dealerHand, bet)
             clc;
             dealerTotal = obj.calculateTotal(dealerHand);  % Calculate the initial dealer total
             disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(dealerTotal)]);
-
 
             % Dealer draws cards until total is at least 17
             while dealerTotal < 17
@@ -161,15 +160,12 @@ classdef BlackjackTest
                 obj.balance = obj.balance + bet;  % Player wins, increase balance
             else
                 % Determine the winner
-                % Inside dealerTurn function
                 obj.balance = obj.balance + obj.determineWinner(playerHand, dealerHand, bet);  % Pass both playerHand and dealerHand
-
             end
 
             % Display updated balance
             disp(['New balance: $', num2str(obj.balance)]);
         end
-
 
         % Helper function to calculate hand total
         function total = calculateTotal(~, hand)
@@ -195,6 +191,7 @@ classdef BlackjackTest
                 disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(obj.calculateTotal(dealerHand))]);
             end
         end
+    
 
         % Helper function to determine the winner and update balance
         function balanceChange = determineWinner(obj, playerHand, dealerHand, bet)
