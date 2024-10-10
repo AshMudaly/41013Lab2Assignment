@@ -10,8 +10,6 @@ classdef BlackjackTest
         function obj = BlackjackTest()
             disp('Welcome to Blackjack!');
             pause(2);
-
-            % Initialize properties inside constructor
             obj.balance = 100;  % Player's starting balance
             obj.cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'};
             obj = obj.shuffleDeck();  % Shuffle the deck at the start
@@ -23,8 +21,7 @@ classdef BlackjackTest
                 clc;
                 disp(['Current balance: $', num2str(obj.balance)]);
 
-                % Betting amount
-                bet = obj.getBet();
+                bet = obj.getBet();  % Betting amount
                 disp(['You bet $', num2str(bet)]);
 
                 % Shuffle deck if fewer than 15 cards are left
@@ -35,68 +32,27 @@ classdef BlackjackTest
                 % Player's and Dealer's hands
                 [playerHand, obj] = obj.dealCard([], 2);
                 [dealerHand, obj] = obj.dealCard([], 2);
-
-                % Show initial hands
-                obj.showHands(playerHand, dealerHand, true);
+                obj.showHands(playerHand, dealerHand, true);  % Show initial hands
 
                 % Player's turn
-                while true
-                    clc;
-                    obj.showHands(playerHand, dealerHand, true);
-
-                    % Check if player already has 5 cards
-                    if length(playerHand) >= 5
-                        disp('You have 5 cards. You must stand.');
-                        break;
-                    end
-
-                    choice = input('Do you want to (h)it or (s)tand? ', 's');
-
-                    switch choice
-                        case 'h'
-                            [playerHand, obj] = obj.dealCard(playerHand);
-                            if obj.calculateTotal(playerHand) > 21
-                                clc;
-                                obj.showHands(playerHand, dealerHand, true);
-                                disp('Bust! You lose.');
-                                obj.balance = obj.balance - bet;
-                                disp(['New balance: $', num2str(obj.balance)]);
-                                break;
-                            end
-                        case 's'
-                            break;
-                        otherwise
-                            disp('Invalid choice. Please type h to hit or s to stand.');
-                    end
-                end
+                playerBust = obj.playerTurn(playerHand, dealerHand, bet);
 
                 % Dealer's turn if player hasn't busted
-                if obj.calculateTotal(playerHand) <= 21
-                    clc;
-                    disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(obj.calculateTotal(dealerHand))]);
-                    while obj.calculateTotal(dealerHand) < 17
-                        [dealerHand, obj] = obj.dealCard(dealerHand);
-                        clc;
-                        disp(['Dealer draws a card. Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(obj.calculateTotal(dealerHand))]);
-                    end
-
-                    % Check dealer bust
-                    if obj.calculateTotal(dealerHand) > 21
-                        disp('Dealer busts! You win.');
-                        obj.balance = obj.balance + bet;
-                        disp(['New balance: $', num2str(obj.balance)]);
-                    else
-                        % Determine the winner
-                        obj.balance = obj.balance + obj.determineWinner(playerHand, dealerHand, bet);
-                        disp(['New balance: $', num2str(obj.balance)]);
-                    end
+                if ~playerBust
+                    obj.dealerTurn(dealerHand, bet);
                 end
 
                 % Ask if the player wants to continue
                 if obj.balance > 0
                     cont = input('Do you want to play again? (y/n): ', 's');
-                    if cont == 'n'
-                        break;
+                    switch cont
+                        case 'y'
+                            continue;  % Continue playing
+                        case 'n'
+                            break;  % Exit the game
+                        otherwise
+                            disp('Invalid input. Exiting game.');
+                            break;  % Exit the game
                     end
                 else
                     disp('You have run out of money! Game over.');
@@ -104,12 +60,14 @@ classdef BlackjackTest
             end
         end
 
-        % Shuffle the deck
+        % Shuffle the deck and ensure it resets to 52 cards
         function obj = shuffleDeck(obj)
-            % Initialize deck (1-10, J, Q, K represented by 10, Ace as 1)
-            deckValues = [1:10, 10, 10, 10];  % J, Q, K are 10 points
+            deckValues = [1:10, 10, 10, 10];  % J, Q, K represented by 10, Ace as 1
             obj.deck = repmat(deckValues, 1, 4);  % 4 suits (total 52 cards)
             obj.deck = obj.deck(randperm(length(obj.deck)));  % Shuffle the deck
+
+            % Debugging: Check the length of the deck after shuffling
+            disp(['Deck size after shuffling: ', num2str(length(obj.deck))]);
         end
 
         % Helper function to get player's bet
@@ -117,13 +75,15 @@ classdef BlackjackTest
             while true
                 betInput = input(['Enter your bet (1 to ', num2str(obj.balance), '): '], 's'); % Take input as a string
                 bet = str2double(betInput);  % Convert input to a number
-                % Check if the conversion was successful and if the value is within the valid range
-                if isnan(bet) || ~isscalar(bet) || bet < 1 || bet > obj.balance
-                    disp(['Invalid input. Please enter a value between 1 and ', num2str(obj.balance), '.']);
-                    pause(2);
-                    clc;
-                else
-                    break;  % Valid input, exit the loop
+
+                switch true
+                    case isnan(bet) || bet < 1 || bet > obj.balance
+                        disp(['Invalid input. Please enter a value between 1 and ', num2str(obj.balance), '.']);
+                        disp(['Current balance: $', num2str(obj.balance)]); % Display current balance
+                        pause(2);
+                        clc;
+                    otherwise
+                        return;  % Valid input, exit the loop
                 end
             end
         end
@@ -133,28 +93,90 @@ classdef BlackjackTest
             if nargin < 3
                 numCards = 1; % Default to dealing 1 card
             end
-
-            % Ensure we don't attempt to deal more cards than available
-            if numCards > length(obj.deck)
-                numCards = length(obj.deck);
-            end
-
+            numCards = min(numCards, length(obj.deck));  % Ensure we don't deal more cards than available
             hand = [hand, obj.deck(1:numCards)];  % Add card(s) to hand
             obj.deck(1:numCards) = [];  % Remove card(s) from deck
 
-            % Reshuffle if deck is empty
-            if isempty(obj.deck)
+            % Debugging: Check deck size after dealing cards
+            disp(['Deck size after dealing: ', num2str(length(obj.deck))]);
+
+            if isempty(obj.deck)  % Reshuffle if deck is empty
                 disp('Reshuffling deck...');
                 obj = obj.shuffleDeck();
             end
         end
+
+        % Helper function to handle player's turn
+        function playerBust = playerTurn(obj, playerHand, dealerHand, bet)
+            playerBust = false;
+
+            while true
+                clc;
+                obj.showHands(playerHand, dealerHand, true);
+
+                if length(playerHand) >= 5
+                    disp('You have 5 cards. You must stand.');
+                    break;
+                end
+
+                choice = input('Do you want to (h)it or (s)tand? ', 's');
+                switch choice
+                    case 'h'
+                        [playerHand, obj] = obj.dealCard(playerHand);
+                        if obj.calculateTotal(playerHand) > 21
+                            clc;
+                            obj.showHands(playerHand, dealerHand, true);
+                            disp('Bust! You lose.');
+                            obj.balance = obj.balance - bet;
+                            disp(['New balance: $', num2str(obj.balance)]);
+                            playerBust = true;  % Player busted
+                            return;  % Exit the player turn
+                        end
+                    case 's'
+                        break;  % Exit the player turn
+                    otherwise
+                        disp('Invalid choice. Please type h to hit or s to stand.');
+                end
+            end
+        end
+
+        % Helper function to handle dealer's turn
+        function dealerTurn(obj, dealerHand, bet)
+            clc;
+            dealerTotal = obj.calculateTotal(dealerHand);  % Calculate the initial dealer total
+            disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(dealerTotal)]);
+
+
+            % Dealer draws cards until total is at least 17
+            while dealerTotal < 17
+                [dealerHand, obj] = obj.dealCard(dealerHand);  % Dealer draws a card
+                dealerTotal = obj.calculateTotal(dealerHand);  % Recalculate total after drawing
+                clc;
+                disp(['Dealer draws a card. Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(dealerTotal)]);
+            end
+
+            % Check if dealer busts
+            if dealerTotal > 21
+                disp('Dealer busts! You win.');
+                obj.balance = obj.balance + bet;  % Player wins, increase balance
+            else
+                % Determine the winner
+                % Inside dealerTurn function
+                obj.balance = obj.balance + obj.determineWinner(playerHand, dealerHand, bet);  % Pass both playerHand and dealerHand
+
+            end
+
+            % Display updated balance
+            disp(['New balance: $', num2str(obj.balance)]);
+        end
+
 
         % Helper function to calculate hand total
         function total = calculateTotal(~, hand)
             total = sum(hand);
             aceCount = sum(hand == 1);
             while total <= 11 && aceCount > 0
-                total = total + 10; % Count Ace as 11 if it doesn't bust the hand
+                total = total + 10;  % Count Ace as 11 if it doesn't bust the hand
                 aceCount = aceCount - 1;
             end
         end
@@ -176,8 +198,8 @@ classdef BlackjackTest
 
         % Helper function to determine the winner and update balance
         function balanceChange = determineWinner(obj, playerHand, dealerHand, bet)
-            playerTotal = obj.calculateTotal(playerHand);
-            dealerTotal = obj.calculateTotal(dealerHand);
+            playerTotal = obj.calculateTotal(playerHand);  % Calculate player total
+            dealerTotal = obj.calculateTotal(dealerHand);  % Calculate dealer total
 
             if playerTotal > dealerTotal
                 disp('You win!');
@@ -190,5 +212,6 @@ classdef BlackjackTest
                 balanceChange = 0;  % No change in balance
             end
         end
+
     end
 end
