@@ -1,4 +1,7 @@
 classdef BlackjackTest
+    %#ok<*NASGU>
+    %#ok<*NOPRT>
+    %#ok<*TRYNC>
     properties
         balance;   % Player's starting balance
         deck;      % Deck of cards
@@ -35,11 +38,11 @@ classdef BlackjackTest
                 obj.showHands(playerHand, dealerHand, true);  % Show initial hands
 
                 % Player's turn
-                playerBust = obj.playerTurn(playerHand, dealerHand, bet);
+                [playerBust, obj] = obj.playerTurn(playerHand, dealerHand, bet);
 
                 % Dealer's turn if player hasn't busted
                 if ~playerBust
-                    obj.dealerTurn(playerHand,dealerHand, bet);
+                    obj = obj.dealerTurn(playerHand, dealerHand, bet);
                 end
 
                 % Ask if the player wants to continue
@@ -107,7 +110,7 @@ classdef BlackjackTest
         end
 
         % Helper function to handle player's turn
-        function playerBust = playerTurn(obj, playerHand, dealerHand, bet)
+        function [playerBust, obj] = playerTurn(obj, playerHand, dealerHand, bet)
             playerBust = false;
 
             while true
@@ -140,8 +143,8 @@ classdef BlackjackTest
             end
         end
 
-        % Helper function to handle dealer's turn
-        function dealerTurn(obj, playerHand, dealerHand, bet)
+
+        function [obj] = dealerTurn(obj, playerHand, dealerHand, bet)
             clc;
             dealerTotal = obj.calculateTotal(dealerHand);  % Calculate the initial dealer total
             disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(dealerTotal)]);
@@ -159,13 +162,15 @@ classdef BlackjackTest
                 disp('Dealer busts! You win.');
                 obj.balance = obj.balance + bet;  % Player wins, increase balance
             else
-                % Determine the winner
-                obj.balance = obj.balance + obj.determineWinner(playerHand, dealerHand, bet);  % Pass both playerHand and dealerHand
+                % Determine the winner if dealer doesn't bust
+                balanceChange = obj.determineWinner(playerHand, dealerHand, bet);
+                obj.balance = obj.balance + balanceChange;
             end
 
             % Display updated balance
             disp(['New balance: $', num2str(obj.balance)]);
         end
+
 
         % Helper function to calculate hand total
         function total = calculateTotal(~, hand)
@@ -191,7 +196,6 @@ classdef BlackjackTest
                 disp(['Dealer''s cards: ', obj.handToString(dealerHand), ' | Total: ', num2str(obj.calculateTotal(dealerHand))]);
             end
         end
-    
 
         % Helper function to determine the winner and update balance
         function balanceChange = determineWinner(obj, playerHand, dealerHand, bet)
