@@ -1,0 +1,61 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="669289847" file="C:\Users\ashmu\Personal\University\IR\Assignment 2\41013Lab2Assignment\guitutorial.prj" location="C:\Users\ashmu\Personal\University\IR\Assignment 2\41013Lab2Assignment" name="guitutorial" target="target.mlapps" target-name="Package App">
+    <param.appname>guitutorial</param.appname>
+    <param.authnamewatermark>Ash Mudaly</param.authnamewatermark>
+    <param.email />
+    <param.company />
+    <param.icon />
+    <param.icons />
+    <param.summary>Built from the Tutorial on YT</param.summary>
+    <param.description>This is a test GUI made to help deepen understanding for my own application.</param.description>
+    <param.screenshot>C:\Users\ashmu\AppData\Local\Temp\tpc1552c82_a6ac_45df_8c44_30a60e70f041.png</param.screenshot>
+    <param.version>1.0</param.version>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.output>${PROJECT_ROOT}</param.output>
+    <param.guid>4a1f4ee0-48cb-4033-b64a-2730e16c1437</param.guid>
+    <unset>
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.output />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\guitutorial.mlapp</file>
+    </fileset.main>
+    <fileset.depfun />
+    <fileset.resources />
+    <fileset.package />
+    <build-deliverables>
+      <file location="C:\Users\ashmu\Personal\University\IR\Assignment 2" name="41013Lab2Assignment" optional="false">C:\Users\ashmu\Personal\University\IR\Assignment 2\41013Lab2Assignment</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2024a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
