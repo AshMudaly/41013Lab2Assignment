@@ -1,7 +1,7 @@
 classdef Controller < handle
-%#ok<*NASGU>
-%#ok<*NOPRT>
-%#ok<*TRYNC>
+    %#ok<*NASGU>
+    %#ok<*NOPRT>
+    %#ok<*TRYNC>
     properties
         player % DoBot Robot Object
         dealer % HitMeBot Object
@@ -9,7 +9,12 @@ classdef Controller < handle
         doBotHome % DoBotMagician home q position
         chip % Test property for chip
         chipPosition % Test property for chip position, initially only 1 pos
-        
+        chipTransform
+        card
+        cardPosition
+        cardTransform
+        serialObj % Serial port object for Arduino
+
     end
 
     methods
@@ -21,14 +26,65 @@ classdef Controller < handle
             self.player.homeQ = [0,deg2rad(0),deg2rad(0),deg2rad(80),0];
             self.player.model.animate(self.player.homeQ);
             self.dealer.model.animate(self.dealer.homeQ);
-            self.chipPosition = [0,-0.6,0.64];
-            self.chip = PlaceObject('chip.ply', self.chipPosition);
+            self.chipPosition = transl(0, -0.4, 0.64);
+            self.chipTransform = hgtransform; % Create a transformation object
+            self.chip = PlaceObject('chip.ply', self.chipPosition(1:3, 4)');
+            set(self.chip, 'Parent', self.chipTransform); % Set the PLY object as a child of the transform
+            set(self.chipTransform, 'Matrix', self.chipPosition); % Set the initial position
+            self.cardPosition = transl(0, -1., 0.64);
+            self.cardTransform = hgtransform; % Create a transformation object
+            self.card = PlaceObject('card.ply', self.cardPosition(1:3, 4)');
+            set(self.chip, 'Parent', self.cardTransform); % Set the PLY object as a child of the transform
+            set(self.cardTransform, 'Matrix', self.cardPosition); % Set the initial position
             drawnow();
+            self.initializeSerial();
         end
 
-%% Get Joint Values - Return the join value as q values, 1 x 7 matrix or 1 x 5 matrix depending on the robot specified
-% Called inside Controller using "self.GetJointState(self.player/dealer)"
-% Called inside Main using "self.robots.GetJointState(self.robots.player/dealer)"
+        %% Initilize Serial input from the Arduino
+        % make sure arduino is plugged in to the computer in COM 3 and
+        % the arduino IDE does not have the serial monitor open.
+        function initializeSerial(self)
+            % Delete all current serial ports in use
+            delete(serialportfind);
+            % Connect to the Arduino
+            self.serialObj = serialport("COM3", 9600);
+            configureTerminator(self.serialObj, "CR/LF");
+            flush(self.serialObj);
+            % Prepare the UserData property to store the Arduino data.
+            self.serialObj.UserData = struct("Data", [], "Count", 1);
+            % Do not configure the callback here
+        end
+
+        %% Start Reading Data
+        function startReading(self)
+             % Configure callback to read data
+            configureCallback(self.serialObj, "terminator", @(src, event) self.readData(src, event));
+            disp('Type "STOP" and press Enter to stop reading...');
+            while true
+                userInput = input('', 's'); % Read user input as a string
+                if strcmpi(userInput, 'STOP') % Check if the input is 'STOP'
+                    disp('Stopping data collection.');
+                    configureCallback(self.serialObj, "off"); % Stop reading data
+                    break; % Exit the loop
+                end
+            end
+        end
+
+        %% Read Data Callback
+        function readData(self, src, ~)
+            % Read the ASCII data from the serialport object.
+            data = readline(src);
+            % Convert the string data to numeric type and save it in the UserData property
+            src.UserData.Data(end + 1) = str2double(data);
+            % Update the Count value of the serialport object
+            src.UserData.Count = src.UserData.Count + 1;
+            % Output the latest button press state to the command window
+            fprintf('Latest Button Press State: %f\n', src.UserData.Data(end));
+        end
+
+        %% Get Joint Values - Return the join value as q values, 1 x 7 matrix or 1 x 5 matrix depending on the robot specified
+        % Called inside Controller using "self.GetJointState(self.player/dealer)"
+        % Called inside Main using "self.robots.GetJointState(self.robots.player/dealer)"
         function jointValue = GetJointState(self, robot)
             if robot == self.dealer
                 jointValue = self.dealer.model.getpos();
@@ -39,9 +95,9 @@ classdef Controller < handle
             end
         end
 
-%% Get Pose - Return the position of the end effector as a 4x4 matrix
-% Called inside Controller using "self.GetPos(self.player/dealer)"
-% Called inside Main using "self.robots.GetPos(self.robots.player/dealer)"
+        %% Get Pose - Return the position of the end effector as a 4x4 matrix
+        % Called inside Controller using "self.GetPos(self.player/dealer)"
+        % Called inside Main using "self.robots.GetPos(self.robots.player/dealer)"
         function pos = GetPos(self, robot)
             if robot == self.dealer
                 jointValues = self.GetJointState(self.dealer);
@@ -54,11 +110,11 @@ classdef Controller < handle
             end
         end
 
-%% Basic Robot Movement
-% Called inside Controller using "self.RobotMove(self.player/dealer, X, Y,
-% Z, steps, Rotation)" input which robot you want to move, the x y and z coordinate
-% and the number of steps it will take. currenty using jtraj
-function RobotMove(self, robot, translation, steps)
+        %% Basic Robot Movement
+        % Called inside Controller using "self.RobotMove(self.player/dealer, X, Y,
+        % Z, steps, Rotation)" input which robot you want to move, the x y and z coordinate
+        % and the number of steps it will take. currenty using jtraj
+        function RobotMove(self, robot, translation, steps)
             if robot == self.dealer
                 currentQ = self.GetJointState(self.dealer);
                 newQ = self.dealer.model.ikcon(translation, currentQ);
@@ -75,10 +131,10 @@ function RobotMove(self, robot, translation, steps)
             elseif robot == self.player
                 currentQ = self.GetJointState(self.player);
                 newQ = self.player.model.ikcon(translation, currentQ);
-                self.player.model.fkine(newQ)
+                self.player.model.fkine(newQ);
                 % Create Matrix of movement between start position and end
                 % position with 25 iterations
-                moveQ = jtraj(currentQ,newQ,steps)
+                moveQ = jtraj(currentQ,newQ,steps);
                 for i =1:steps
                     % Animate the LinearUR3e robot through each q value
                     self.player.model.animate(moveQ(i,:));
@@ -88,13 +144,13 @@ function RobotMove(self, robot, translation, steps)
             end
         end
 
-%% Return To Home Function For Both Robots
-% Called inside Controller using "self.ReturnToHome(self.player/dealer)"
-% Called inside Main using "self.robots.ReturnToHome(self.robots.player/dealer)"
+        %% Return To Home Function For Both Robots
+        % Called inside Controller using "self.ReturnToHome(self.player/dealer)"
+        % Called inside Main using "self.robots.ReturnToHome(self.robots.player/dealer)"
         function ReturnToHome(self, robot)
-            
+
             % Currently working return to home without RMRC
-            
+
             if robot == self.dealer
                 % Find the current position of the robot in q values
                 currentQ = self.GetJointState(self.dealer);
@@ -121,11 +177,11 @@ function RobotMove(self, robot, translation, steps)
                 end
             else
                 error('Invalid robot specified. Choose either player or dealer.');
-            end 
+            end
         end
-%% Testing RMRC for Robot
-%
-%
+        %% Testing RMRC for Robot
+        %
+        %
         function RMRC(self)
             t = 5;             % Total time (s)
             deltaT = 0.1;      % Control frequency
@@ -149,13 +205,13 @@ function RobotMove(self, robot, translation, steps)
             z = currentT(3,4)
             xyz(1,:) = lspb(x,x,steps);
             xyz(2,:) = lspb(y,y,steps);
-            xyz(3,:) = lspb(z,1.0,steps);
+            xyz(3,:) = lspb(z,0.7,steps);
             R = currentT(1:3, 1:3)
             eul = rotm2eul(R)
             yaw = eul(1)   % Rotation about the z-axis
             pitch = eul(2) % Rotation about the y-axis
             roll = eul(3)  % Rotation about the x-axis
-            
+
             % suction cup down at home positons is roll = -pi/2, 0 for
             % pithc and yaw
 
@@ -217,7 +273,7 @@ function RobotMove(self, robot, translation, steps)
             %     ylabel('Angle (rad)')
             %     refline(0,self.dealer.model.qlim(i,1));
             %     refline(0,self.dealer.model.qlim(i,2));
-            % 
+            %
             %     figure(3)
             %     subplot(3,2,i)
             %     plot(qdot(:,i),'k','LineWidth',1)
@@ -225,7 +281,7 @@ function RobotMove(self, robot, translation, steps)
             %     ylabel('Velocity (rad/s)')
             %     refline(0,0)
             % end
-            % 
+            %
             % figure(4)
             % subplot(2,1,1)
             % plot(positionError'*1000,'LineWidth',1)
@@ -233,7 +289,7 @@ function RobotMove(self, robot, translation, steps)
             % xlabel('Step')
             % ylabel('Position Error (mm)')
             % legend('X-Axis','Y-Axis','Z-Axis')
-            % 
+            %
             % subplot(2,1,2)
             % plot(angleError','LineWidth',1)
             % refline(0,0)
@@ -249,122 +305,229 @@ function RobotMove(self, robot, translation, steps)
     end
 
     methods(Static)
-%% Pick up chip basic funciton - moves HitMeBot towards the chip and picks it up
-% Called inside Controller using "self.PickUpChipDealer(self)"
-% Called inside Main using "self.robots.PickUpChipDealer(self.robots)"
+        %% Pick up chip basic funciton - moves HitMeBot towards the chip and picks it up
+        % Called inside Controller using "self.PickUpChipDealer(self)"
+        % Called inside Main using "self.robots.PickUpChipDealer(self.robots)"
         function PickUpChipDealer(self)
+            RobotMove(self, self.dealer, self.chipPosition*trotx(-pi/2)*transl(0,-0.085,0), 45);
+            RobotMove(self, self.dealer, self.chipPosition*trotx(-pi/2)*transl(0,-0.065,0), 15);
+
             currentQ = self.GetJointState(self.dealer);
-            newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
+            newQ = self.dealer.model.ikcon(self.chipPosition*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
             self.dealer.model.fkine(newQ)
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,15);
+            for i =1:15
                 % Animate the LinearUR3e robot through each q value
                 self.dealer.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.dealer)*trotx(-pi/2)*transl(0,0,-0.085)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
 
             currentQ = self.GetJointState(self.dealer);
-            newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.065,0), currentQ);
+            newQ = self.dealer.model.ikcon(transl(0, -0.8, 1.11)*trotx(-pi/2), currentQ);
             self.dealer.model.fkine(newQ)
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,45);
+            for i =1:45
                 % Animate the LinearUR3e robot through each q value
                 self.dealer.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.dealer)*trotx(-pi/2)*transl(0,0,-0.085)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
 
             currentQ = self.GetJointState(self.dealer);
-            newQ = self.dealer.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
+            newQ = self.dealer.model.ikcon(transl(-0.5, -1.1, 0.7)*trotx(-pi/2), currentQ);
             self.dealer.model.fkine(newQ)
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,30);
+            for i =1:30
                 % Animate the LinearUR3e robot through each q value
                 self.dealer.model.animate(moveQ(i,:));
-                delete(self.chip);
-                self.chip = PlaceObject('chip.ply', transl((self.GetPos(self.dealer)) * (transl(0,0.065,0)))');
+                self.chipPosition = self.GetPos(self.dealer)*trotx(-pi/2)*transl(0,0,-0.085)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
+            self.ReturnToHome(self.dealer);
         end
 
-%% Hit Me Function - Moves DoBotMagician so it taps the table 
-% Called inside Controller using "self.HitMe(self)"
-% Called inside Main using "self.robots.HitMe(self.robots)"
+        %% Hit Me Function - Moves DoBotMagician so it taps the table
+        % Called inside Controller using "self.HitMe(self)"
+        % Called inside Main using "self.robots.HitMe(self.robots)"
         function HitMe(self)
-            
             RobotMove(self, self.player, transl(-0.05,-0.35,0.73), 25);
             RobotMove(self, self.player, transl(-0.05,-0.35,0.72), 3);
             RobotMove(self, self.player, transl(-0.05, -0.35,0.73), 3);
             RobotMove(self, self.player, transl(-0.05,-0.35,0.72), 3);
             RobotMove(self, self.player, transl(-0.05, -0.35,0.73), 3);
             self.ReturnToHome(self.player);
-        end 
+        end
 
-%% Stand Function - Moves DoBotMagician so it waves the end effector over the cards 
-% Called inside Controller using "self.Stand(self)"
-% Called inside Main using "self.robots.Stand(self.robots)"
+        %% Stand Function - Moves DoBotMagician so it waves the end effector over the cards
+        % Called inside Controller using "self.Stand(self)"
+        % Called inside Main using "self.robots.Stand(self.robots)"
         function Stand(self)
             RobotMove(self, self.player, transl(0,-0.4,0.73), 25);
             RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
             RobotMove(self, self.player, transl(-0.03,-0.4,0.73), 3);
             RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
             RobotMove(self, self.player, transl(-0.03,-0.4,0.73), 3);
-            RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
             self.ReturnToHome(self.player);
         end
 
-%% Pick up chip basic funciton - moves DoBotMagician towards the chip and picks it up
-% Called inside Controller using "self.PickUpChipPlayer(self)"
-% Called inside Main using "self.robots.PickUpChipPlayer(self.robots)"
+        %% Pick up chip basic funciton - moves DoBotMagician towards the chip and picks it up
+        % Called inside Controller using "self.PickUpChipPlayer(self)"
+        % Called inside Main using "self.robots.PickUpChipPlayer(self.robots)"
         function PickUpChipPlayer(self)
+            RobotMove(self, self.player, self.chipPosition*transl(0,0,0.06), 25);
+            RobotMove(self, self.player, self.chipPosition*transl(0,0,0.05), 5);
+
             currentQ = self.GetJointState(self.player);
-            newQ = self.player.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
-            self.player.model.fkine(newQ)
+            newQ = self.player.model.ikcon(self.chipPosition*transl(0,0,0.06), currentQ);
+            self.player.model.fkine(newQ);
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,5);
+            for i =1:5
                 % Animate the LinearUR3e robot through each q value
                 self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
 
             currentQ = self.GetJointState(self.player);
-            newQ = self.player.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.065,0), currentQ);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(self.GetPos(self.player)*transl(0,0,0.03), currentQ);
             self.player.model.fkine(newQ)
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,10);
+            for i =1:10
                 % Animate the LinearUR3e robot through each q value
                 self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
 
             currentQ = self.GetJointState(self.player);
-            newQ = self.player.model.ikcon(transl(self.chipPosition)*trotx(-pi/2)*transl(0,-0.085,0), currentQ);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(transl(-0.15,-0.4,0.73), currentQ);
             self.player.model.fkine(newQ)
             % Create Matrix of movement between start position and end
             % position with 25 iterations
-            moveQ = jtraj(currentQ,newQ,25);
-            for i =1:25
+            moveQ = jtraj(currentQ,newQ,15);
+            for i =1:15
                 % Animate the LinearUR3e robot through each q value
                 self.player.model.animate(moveQ(i,:));
-                delete(self.chip);
-                self.chip = PlaceObject('chip.ply', transl((self.GetPos(self.player)) * (transl(0,0.065,0)))');
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
                 drawnow();
                 pause(0.1)
             end
-        end     
+
+            currentQ = self.GetJointState(self.player);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(transl(-0.15,-0.4,0.69), currentQ);
+            self.player.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,15);
+            for i =1:15
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
+                drawnow();
+                pause(0.1)
+            end
+
+            self.ReturnToHome(self.player);
+
+        end
+        %% Player Bet - takes a chip from the stock pile and places it as a bet
+        % Called inside Controller using "self.PlayerBet(self)"
+        % Called inside Main using "self.robots.PlayerBet(self.robots)"
+        function PlayerBet(self)
+            RobotMove(self, self.player, self.chipPosition*transl(0,0,0.06), 25);
+            RobotMove(self, self.player, self.chipPosition*transl(0,0,0.05), 5);
+
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(self.chipPosition*transl(0,0,0.06), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,5);
+            for i =1:5
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
+                drawnow();
+                pause(0.1)
+            end
+
+            currentQ = self.GetJointState(self.player);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(self.GetPos(self.player)*transl(0,0,0.05), currentQ);
+            self.player.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,10);
+            for i =1:10
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
+                drawnow();
+                pause(0.1)
+            end
+
+            currentQ = self.GetJointState(self.player);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(transl(0, -0.4, 0.7), currentQ);
+            self.player.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,15);
+            for i =1:15
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
+                drawnow();
+                pause(0.1)
+            end
+
+            currentQ = self.GetJointState(self.player);
+            self.GetPos(self.player);
+            newQ = self.player.model.ikcon(transl(0, -0.4, 0.69), currentQ);
+            self.player.model.fkine(newQ)
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,15);
+            for i =1:15
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.chipPosition = self.GetPos(self.player)*transl(0,0,-0.05)
+                set(self.chipTransform, 'Matrix', self.chipPosition);
+                drawnow();
+                pause(0.1)
+            end
+
+            self.ReturnToHome(self.player);
+
+        end
     end
 end
