@@ -10,7 +10,7 @@ classdef BlackjackTest
 
     methods
         % Constructor to initialize properties
-        function obj = BlackjackTest(app)
+        function obj = BlackjackTest(GuiTesting)
             disp('Welcome to Blackjack!');
             pause(2);
             obj.balance = 100;  % Player's starting balance

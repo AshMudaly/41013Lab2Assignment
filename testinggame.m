@@ -2,10 +2,11 @@
 clc;
 clear all;
 close; 
+
 % 
- g = BlackjackTest();  % Create an instance of the BlackjackTest class
- g.play();             % Start the game
- app.BlackjackGame = BlackjackTest(app1);
+ % g = BlackjackTest();  % Create an instance of the BlackjackTest class
+ % g.play();             % Start the game
+ app.BlackjackGame = BlackjackTest(GuiTesting);
 
 % gui = guifunctionsample();
 % gui.play();
