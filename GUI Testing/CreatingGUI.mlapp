@@ -1,0 +1,128 @@
+classdef app1 < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure                  matlab.ui.Figure
+        HitMeButton               matlab.ui.control.Button
+        StandButton               matlab.ui.control.Button
+        BetEditField              matlab.ui.control.NumericEditField
+        PlayerHandTextArea        matlab.ui.control.TextArea
+        DealerHandTextArea        matlab.ui.control.TextArea
+        MessageTextArea           matlab.ui.control.TextArea
+        BalanceLabel              matlab.ui.control.Label
+        BalanceValueLabel         matlab.ui.control.Label
+
+        BlackjackGame             BlackjackTest
+    end
+
+    methods (Access = private)
+
+        % Callback function for Hit Me button
+        function HitMeButtonPushed(app, event)
+            % Call the hit method from BlackjackTest
+            [playerHand, app.BlackjackGame] = app.BlackjackGame.dealCard([], 1);
+            app.updatePlayerHand(playerHand);
+            app.checkPlayerBust();
+        end
+
+        % Callback function for Stand button
+        function StandButtonPushed(app, event)
+            % Dealer's turn logic
+            app.BlackjackGame.dealerTurn(); % You might need to adjust this
+            app.updateDealerHand();
+            app.determineWinner();
+        end
+
+        % Function to update player's hand in the text area
+        function updatePlayerHand(app, playerHand)
+            app.PlayerHandTextArea.Value = app.BlackjackGame.handToString(playerHand);
+        end
+
+        % Function to check if player busts
+        function checkPlayerBust(app)
+            % Implement your logic to check for bust and update the message area
+        end
+
+        % Function to update dealer's hand in the text area
+        function updateDealerHand(app)
+            % Update dealer hand and display
+        end
+
+        % Function to determine the winner and update messages
+        function determineWinner(app)
+            % Implement your logic to determine the winner and update messages
+        end
+
+        % Function to initialize the game
+        function initializeGame(app)
+            app.BlackjackGame = BlackjackTest(); % Initialize the Blackjack game
+            app.updateBalance();
+        end
+
+        % Function to update balance label
+        function updateBalance(app)
+            app.BalanceValueLabel.Text = num2str(app.BlackjackGame.balance);
+        end
+    end
+
+    % App initialization and construction
+    methods (Access = public)
+
+        % Construct app
+        function app = BlackjackApp
+
+            % Create UI components
+            createComponents(app)
+
+            % Initialize game
+            initializeGame(app);
+        end
+
+        % Create and configure components
+        function createComponents(app)
+            % Create the main figure
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 400 300];
+            app.UIFigure.Name = 'Blackjack Game';
+
+            % Create Hit Me button
+            app.HitMeButton = uibutton(app.UIFigure, 'Text', 'Hit Me');
+            app.HitMeButton.Position = [50, 50, 100, 30];
+            app.HitMeButton.ButtonPushedFcn = @(src, event) HitMeButtonPushed(app, event);
+
+            % Create Stand button
+            app.StandButton = uibutton(app.UIFigure, 'Text', 'Stand');
+            app.StandButton.Position = [200, 50, 100, 30];
+            app.StandButton.ButtonPushedFcn = @(src, event) StandButtonPushed(app, event);
+
+            % Create Bet Edit Field
+            app.BetEditField = uieditfield(app.UIFigure, 'numeric');
+            app.BetEditField.Position = [50, 100, 100, 30];
+
+            % Create Labels for balance
+            app.BalanceLabel = uilabel(app.UIFigure, 'Text', 'Current Balance:');
+            app.BalanceLabel.Position = [50, 150, 100, 30];
+
+            app.BalanceValueLabel = uilabel(app.UIFigure, 'Text', '100');
+            app.BalanceValueLabel.Position = [160, 150, 100, 30];
+
+            % Create Player Hand Text Area
+            app.PlayerHandTextArea = uitextarea(app.UIFigure);
+            app.PlayerHandTextArea.Position = [50, 200, 300, 50];
+            app.PlayerHandTextArea.Editable = 'off';
+
+            % Create Dealer Hand Text Area
+            app.DealerHandTextArea = uitextarea(app.UIFigure);
+            app.DealerHandTextArea.Position = [50, 260, 300, 50];
+            app.DealerHandTextArea.Editable = 'off';
+
+            % Create Message Text Area
+            app.MessageTextArea = uitextarea(app.UIFigure);
+            app.MessageTextArea.Position = [50, 320, 300, 50];
+            app.MessageTextArea.Editable = 'off';
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+end
