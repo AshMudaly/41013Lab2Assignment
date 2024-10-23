@@ -58,10 +58,10 @@ classdef Controller < handle
 % Called inside Controller using "self.RobotMove(self.player/dealer, X, Y,
 % Z, steps, Rotation)" input which robot you want to move, the x y and z coordinate
 % and the number of steps it will take. currenty using jtraj
-        function RobotMove(self, robot, X, Y, Z, steps, rotation)
+function RobotMove(self, robot, translation, steps)
             if robot == self.dealer
                 currentQ = self.GetJointState(self.dealer);
-                newQ = self.dealer.model.ikcon(transl(X, Y, Z)*trotx(rotation), currentQ);
+                newQ = self.dealer.model.ikcon(translation, currentQ);
                 self.dealer.model.fkine(newQ);
                 % Create Matrix of movement between start position and end
                 % position with 25 iterations
@@ -74,7 +74,7 @@ classdef Controller < handle
                 end
             elseif robot == self.player
                 currentQ = self.GetJointState(self.player);
-                newQ = self.player.model.ikcon(transl(X, Y, Z)*trotx(rotation), currentQ);
+                newQ = self.player.model.ikcon(translation, currentQ);
                 self.player.model.fkine(newQ)
                 % Create Matrix of movement between start position and end
                 % position with 25 iterations
@@ -127,7 +127,7 @@ classdef Controller < handle
 %
 %
         function RMRC(self)
-            t = 10;             % Total time (s)
+            t = 5;             % Total time (s)
             deltaT = 0.1;      % Control frequency
             steps = t/deltaT;   % No. of steps for simulation
             delta = 2*pi/steps; % Small angle change
@@ -143,46 +143,37 @@ classdef Controller < handle
             positionError = zeros(3,steps); % For plotting trajectory error
             angleError = zeros(3,steps);    % For plotting trajectory error
 
-            % 1.3) Set up trajectory, initial pose
-            % s = lspb(0,1,steps)                % Trapezoidal trajectory scalar
-            % for i=1:steps
-            %     xyz(1,i) = (1-s(i))*0.35 + s(i)*0.35 % Points in x
-            %     xyz(2,i) = (1-s(i))*-0.55 + s(i)*0.55 % Points in y
-            %     xyz(3,i) = 0.5 + 0.2*sin(i*delta) % Points in z
-            %     theta(1,i) = 0;                 % Roll angle
-            %     theta(2,i) = 5*pi/9;            % Pitch angle
-            %     theta(3,i) = 0;                 % Yaw angle
-            % end
             currentT = self.GetPos(self.dealer)
             x = currentT(1,4)
             y = currentT(2,4)
             z = currentT(3,4)
             xyz(1,:) = lspb(x,x,steps);
-            xyz(2,:) = lspb(y,-0.5,steps);
-            xyz(3,:) = lspb(z,1.2,steps);
+            xyz(2,:) = lspb(y,y,steps);
+            xyz(3,:) = lspb(z,1.0,steps);
             R = currentT(1:3, 1:3)
             eul = rotm2eul(R)
             yaw = eul(1)   % Rotation about the z-axis
             pitch = eul(2) % Rotation about the y-axis
             roll = eul(3)  % Rotation about the x-axis
+            
+            % suction cup down at home positons is roll = -pi/2, 0 for
+            % pithc and yaw
 
-            for i=1:steps
-                theta(1,i) = 0;                 % Roll angle
-                theta(2,i) = -pi/2;                 % Pitch angle
-                theta(3,i) =  -pi/2;                 % Yaw angle
-            end
+            theta(1,:) = lspb(roll,-pi/2,steps);
+            theta(2,:) = lspb(pitch,0,steps);
+            theta(3,:) = lspb(yaw,0,steps);
 
 
             T = [rpy2r(theta(1,1),theta(2,1),theta(3,1)) xyz(:,1);zeros(1,3) 1]        % Create transformation of first point and angle
-            q0 = zeros(1,7)                                                            % Initial guess for joint angles
-            qMatrix(1,:) = self.dealer.model.ikcon(T,q0)                               % Solve joint angles to achieve first waypoint
+            q0 = zeros(1,7);                                                            % Initial guess for joint angles
+            qMatrix(1,:) = self.dealer.model.ikcon(T,q0);                               % Solve joint angles to achieve first waypoint
 
             % 1.4) Track the trajectory with RMRC
             for i = 1:steps-1
                 % UPDATE: fkine function now returns an SE3 object. To obtain the
                 % Transform Matrix, access the variable in the object 'T' with '.T'.
-                T = self.dealer.model.fkine(qMatrix(i,:)).T                                         % Get forward transformation at current joint state
-                deltaX = xyz(:,i+1) - T(1:3,4)                                         	% Get position error from next waypoint
+                T = self.dealer.model.fkine(qMatrix(i,:)).T;                                         % Get forward transformation at current joint state
+                deltaX = xyz(:,i+1) - T(1:3,4);                                         	% Get position error from next waypoint
                 Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));                     % Get next RPY angles, convert to rotation matrix
                 Ra = T(1:3,1:3);                                                        % Current end-effector rotation matrix
                 Rdot = (1/deltaT)*(Rd - Ra);                                            % Calculate rotation matrix error
@@ -217,41 +208,42 @@ classdef Controller < handle
                 drawnow();
                 pause(0.1)
             end
-            for i = 1:6
-                figure(2)
-                subplot(3,2,i)
-                plot(qMatrix(:,i),'k','LineWidth',1)
-                title(['Joint ', num2str(i)])
-                ylabel('Angle (rad)')
-                refline(0,self.dealer.model.qlim(i,1));
-                refline(0,self.dealer.model.qlim(i,2));
-
-                figure(3)
-                subplot(3,2,i)
-                plot(qdot(:,i),'k','LineWidth',1)
-                title(['Joint ',num2str(i)]);
-                ylabel('Velocity (rad/s)')
-                refline(0,0)
-            end
-
-            figure(4)
-            subplot(2,1,1)
-            plot(positionError'*1000,'LineWidth',1)
-            refline(0,0)
-            xlabel('Step')
-            ylabel('Position Error (mm)')
-            legend('X-Axis','Y-Axis','Z-Axis')
-
-            subplot(2,1,2)
-            plot(angleError','LineWidth',1)
-            refline(0,0)
-            xlabel('Step')
-            ylabel('Angle Error (rad)')
-            legend('Roll','Pitch','Yaw')
-            figure(5)
-            plot(m,'k','LineWidth',1)
-            refline(0,epsilon)
-            title('Manipulability')
+            % all the plots for acuracy and singularity analysis
+            % for i = 1:6
+            %     figure(2)
+            %     subplot(3,2,i)
+            %     plot(qMatrix(:,i),'k','LineWidth',1)
+            %     title(['Joint ', num2str(i)])
+            %     ylabel('Angle (rad)')
+            %     refline(0,self.dealer.model.qlim(i,1));
+            %     refline(0,self.dealer.model.qlim(i,2));
+            % 
+            %     figure(3)
+            %     subplot(3,2,i)
+            %     plot(qdot(:,i),'k','LineWidth',1)
+            %     title(['Joint ',num2str(i)]);
+            %     ylabel('Velocity (rad/s)')
+            %     refline(0,0)
+            % end
+            % 
+            % figure(4)
+            % subplot(2,1,1)
+            % plot(positionError'*1000,'LineWidth',1)
+            % refline(0,0)
+            % xlabel('Step')
+            % ylabel('Position Error (mm)')
+            % legend('X-Axis','Y-Axis','Z-Axis')
+            % 
+            % subplot(2,1,2)
+            % plot(angleError','LineWidth',1)
+            % refline(0,0)
+            % xlabel('Step')
+            % ylabel('Angle Error (rad)')
+            % legend('Roll','Pitch','Yaw')
+            % figure(5)
+            % plot(m,'k','LineWidth',1)
+            % refline(0,epsilon)
+            % title('Manipulability')
 
         end
     end
@@ -307,9 +299,12 @@ classdef Controller < handle
 % Called inside Controller using "self.HitMe(self)"
 % Called inside Main using "self.robots.HitMe(self.robots)"
         function HitMe(self)
-            RobotMove(self, self.player, -0.05,-0.35,0.73, 25, 0);
-            RobotMove(self, self.player, -0.05,-0.35,0.72, 3, 0);
-            RobotMove(self, self.player, -0.05,-0.35,0.73, 3, 0);
+            
+            RobotMove(self, self.player, transl(-0.05,-0.35,0.73), 25);
+            RobotMove(self, self.player, transl(-0.05,-0.35,0.72), 3);
+            RobotMove(self, self.player, transl(-0.05, -0.35,0.73), 3);
+            RobotMove(self, self.player, transl(-0.05,-0.35,0.72), 3);
+            RobotMove(self, self.player, transl(-0.05, -0.35,0.73), 3);
             self.ReturnToHome(self.player);
         end 
 
@@ -317,11 +312,12 @@ classdef Controller < handle
 % Called inside Controller using "self.Stand(self)"
 % Called inside Main using "self.robots.Stand(self.robots)"
         function Stand(self)
-            RobotMove(self, self.player, 0,-0.4,0.73, 25, 0);
-            RobotMove(self, self.player, 0.05,-0.4,0.73, 3, 0);
-            RobotMove(self, self.player, -0.05,-0.4,0.73, 3, 0);
-            RobotMove(self, self.player, 0.05,-0.4,0.73, 3, 0);
-            RobotMove(self, self.player, -0.05,-0.4,0.73, 3, 0);
+            RobotMove(self, self.player, transl(0,-0.4,0.73), 25);
+            RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
+            RobotMove(self, self.player, transl(-0.03,-0.4,0.73), 3);
+            RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
+            RobotMove(self, self.player, transl(-0.03,-0.4,0.73), 3);
+            RobotMove(self, self.player, transl(0.03,-0.4,0.73), 3);
             self.ReturnToHome(self.player);
         end
 
