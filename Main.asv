@@ -3,13 +3,7 @@ classdef Main < handle
 %#ok<*NOPRT>
 %#ok<*TRYNC>
     properties
-        player % DoBot Robot Object
-        dealer % HitMeBot Object
-        hitMeHome % HitMeBot home q posiiton
-        doBotHome % DoBotMagician home q position
-        chip % Test property for chip
-        chipPosition % Test property for chip position, initially only 1 pos
-        
+        robots % Constructor for controller class
     end
 
     methods
@@ -19,13 +13,13 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
-            drawnow();
+            self.robots = Controller();
         end
     end
-
     methods(Static)
         %% Generate Environment
         function Environment()
+            hold on
             xLimits = [-2, 2];
             yLimits = [-2, 2];
             zLimits = [0, 2];
@@ -74,6 +68,16 @@ classdef Main < handle
                 ,[2,2;0,0] ...
                 ,'CData',imread('darkRedBrickWall.jpg') ...
                 ,'FaceColor','texturemap');
+        end
+        function BetAndReturn(self)
+            self.robots.PlayerBet(self.robots)
+            self.robots.PickUpChipDealer(self.robots)
+            self.robots.HitMe(self.robots)
+            self.robots.DealCard(self.robots)
+            self.robots.PickUpCardPlayer(self.robots)
+            self.robots.Stand(self.robots)
+            self.robots.DealChip(self.robots)
+            self.robots.PickUpChipPlayer(self.robots)
         end
     end
 end

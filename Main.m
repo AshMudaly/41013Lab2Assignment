@@ -69,5 +69,15 @@ classdef Main < handle
                 ,'CData',imread('darkRedBrickWall.jpg') ...
                 ,'FaceColor','texturemap');
         end
+        function BetAndReturn(self)
+            self.robots.PlayerBet(self.robots)
+            self.robots.PickUpChipDealer(self.robots)
+            self.robots.HitMe(self.robots)
+            self.robots.DealCard(self.robots)
+            self.robots.PickUpCardPlayer(self.robots)
+            self.robots.Stand(self.robots)
+            self.robots.DealChip(self.robots)
+            self.robots.PickUpChipPlayer(self.robots)
+        end
     end
 end
