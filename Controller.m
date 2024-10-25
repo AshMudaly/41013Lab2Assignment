@@ -41,7 +41,7 @@ classdef Controller < handle
             set(self.card, 'Parent', self.cardTransform); % Set the PLY object as a child of the transform
             set(self.cardTransform, 'Matrix', self.cardPosition); % Set the initial position
             drawnow();
-            %self.initializeSerial();
+            self.initializeSerial();
         end
 
         %% Initilize Serial input from the Arduino
