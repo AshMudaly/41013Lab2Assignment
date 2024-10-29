@@ -1,21 +1,36 @@
 classdef Main < handle
-%#ok<*NASGU>
-%#ok<*NOPRT>
-%#ok<*TRYNC>
+    %#ok<*NASGU>
+    %#ok<*NOPRT>
+    %#ok<*TRYNC>
+    
     properties
         robots % Constructor for controller class
     end
 
     methods
-        %% Contructor
+        %% Constructor
         function self = Main()
             clf
             clc
             hold on
             self.Environment();
             self.robots = Controller();
+            self.startBlackjackGame();
+        end
+        
+        %% Method to start the Blackjack game and GUI
+        function startBlackjackGame(~)
+            % Create an instance of your BlackjackTest class
+            game = BlackjackTest();
+
+            % Create an instance of the app1 GUI
+            myApp = app1(); 
+
+            % Start the game loop
+            game.play(myApp);  % Pass the app instance to the play method
         end
     end
+    
     methods(Static)
         %% Generate Environment
         function Environment()
@@ -33,7 +48,6 @@ classdef Main < handle
             blackjackVerts = [get(blackjackTable,'Vertices'), ones(size(get(blackjackTable,'Vertices'),1),1)]*trotx(pi/2);
             set(blackjackTable,'Vertices',blackjackVerts(:,1:3))
 
-            
             dealerChip = PlaceObject('dealerChip.ply', [0,-1.15,0.64]);
 
             stoolPositions = [0,0,-0.2;
@@ -69,6 +83,7 @@ classdef Main < handle
                 ,'CData',imread('darkRedBrickWall.jpg') ...
                 ,'FaceColor','texturemap');
         end
+        
         function BetAndReturn(self)
             self.robots.PlayerBet(self.robots)
             self.robots.PickUpChipDealer(self.robots)
