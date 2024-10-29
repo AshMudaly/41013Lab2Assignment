@@ -5,8 +5,10 @@ classdef BlackjackTest
         deck       % Cell array representing the deck of cards
         balance    % Player's balance
         betAmount  % Current bet amount
-        displayMessageGame % Messages to display in the game window
+        % updateGameWindow % Messages to display in the game window
         gameStarted % Flag to indicate if the game has started
+        GameWindowTextbox % Update the UI component
+        gameWindow
     end
 
     methods
@@ -14,11 +16,15 @@ classdef BlackjackTest
         function obj = BlackjackTest()
             obj.balance = 500; % Starting balance
             obj.deck = obj.createDeck(); % Create a new deck
-            obj.displayMessageGame = '';
+            obj.gameWindow = '';
             obj.playerHand = {};
             obj.dealerHand = {};
             obj.gameStarted = false; % Initialize gameStarted flag
             obj.showWelcomeMessage(); % Show welcome message upon initialization
+        end
+
+        function updateGameWindow(obj)
+            set(obj.GameWindowTextbox, 'String', obj.gameWindow);
         end
 
         % Method to create a standard deck of cards
@@ -36,8 +42,77 @@ classdef BlackjackTest
 
         % Method to show a welcome message
         function showWelcomeMessage(obj)
-            obj.displayMessageGame = 'Welcome to Blackjack!';
+            obj.gameWindow = 'Welcome to Blackjack!';
+            obj.updateGameWindow();
         end
+
+        function play(obj, myApp)
+            % This method will control the main game loop
+            while true
+                % Display the current balance
+                obj.gameWindow = sprintf('Current Balance: $%d', obj.balance);
+                obj.updateGameWindow();
+
+                % Get player bet amount from the app UI
+                obj.betAmount = myApp.BetAmountField.Value; % Adjust according to your UI field name
+
+                % Check if the bet amount is valid
+                if obj.betAmount > obj.balance || obj.betAmount <= 0
+                    obj.gameWindow = 'Invalid bet amount. Please enter a valid bet.';
+                    obj.updateGameWindow();
+                    continue; % Skip to the next iteration
+                end
+
+                % Deal initial cards
+                obj = obj.dealCards();
+
+                % Game loop for player's turn
+                while obj.gameStarted
+                    % Here you would check for hits or stands based on the UI buttons
+                    % Assuming you have buttons in your app for "Hit" and "Stand"
+                    if myApp.HitButton.Value % Assuming HitButton is a button in your app
+                        obj = obj.hitCard('player', 1);
+                        obj.displayCurrentHands();
+
+                        % Check if player has busted
+                        if obj.calculateTotal(obj.playerHand) > 21
+                            break; % Exit loop if player busts
+                        end
+                    elseif myApp.StandButton.Value % Assuming StandButton is a button in your app
+                        obj = obj.onStandButtonPress();
+                        break; % Exit loop to proceed to dealer's turn
+                    end
+                end
+
+                % Check if player busted
+                if obj.calculateTotal(obj.playerHand) > 21
+                    obj.gameWindow = 'You busted! Dealer Wins!';
+                    obj.updateGameWindow();
+                else
+                    % Proceed to dealer's turn
+                    obj = obj.onDealerTurn();
+                end
+
+                % Ask if the player wants to play again
+                playAgain = questdlg('Do you want to play again?', ...
+                    'Play Again', ...
+                    'Yes', 'No', 'Yes');
+                if strcmp(playAgain, 'No')
+                    break; % Exit the game loop
+                end
+
+                % Reset game state for a new round
+                obj.playerHand = {};
+                obj.dealerHand = {};
+                obj.deck = obj.createDeck();
+                obj.gameStarted = false;
+            end
+
+            % Display final balance
+            obj.gameWindow = sprintf('Thank you for playing! Your final balance is $%d', obj.balance);
+            obj.updateGameWindow();
+        end
+
 
         % Method to deal inital cards
         function obj = dealCards(obj)
@@ -48,7 +123,8 @@ classdef BlackjackTest
                 obj.gameStarted = true; % Set gameStarted to true after dealing
                 obj.displayCurrentHands(); % Show the current hands after dealing
             else
-                obj.displayMessageGame = 'The game has already started. Please choose to hit or stand.';
+                obj.gameWindow = 'The game has already started. Please choose to hit or stand.';
+                obj.updateGameWindow();
             end
         end
 
@@ -58,7 +134,8 @@ classdef BlackjackTest
                 hand = obj.playerHand;
                 % Check if the player's hand total is already 21
                 if obj.calculateTotal(hand) == 21
-                    obj.displayMessageGame = 'You have 21! No more hits allowed.';
+                    obj.gameWindow = 'You have 21! No more hits allowed.';
+                    obj.updateGameWindow;
                     return;
                 end
             else
@@ -67,13 +144,17 @@ classdef BlackjackTest
 
             % Check if the hand already has 5 cards
             if length(hand) + numCards > 5
-                obj.displayMessageGame = sprintf('Cannot deal more than 5 cards to the %s!', who);
+                obj.gameWindow = sprintf('Cannot deal more than 5 cards to the %s!', who);
+                obj.updateGameWindow();
+
                 return;
             end
 
             for i = 1:numCards
                 if isempty(obj.deck)
-                    obj.displayMessageGame = 'No more cards in the deck!';
+                    obj.gameWindow = 'No more cards in the deck!';
+                    obj.updateGameWindow();
+
                     return;
                 end
                 card = obj.deck{end}; % Get the last card from the deck
@@ -97,28 +178,34 @@ classdef BlackjackTest
             dealerHandStr = ['Dealer''s cards: ', obj.handToString(obj.dealerHand), ' | Total: ', num2str(dealerTotal)];
 
             % Update displayMessageGame for hands display
-            obj.displayMessageGame = [playerHandStr, '\n', dealerHandStr];
+            obj.gameWindow = [playerHandStr, '\n', dealerHandStr];
+            obj.updateGameWindow();
         end
 
         % Method to calculate the total value of a hand
         function total = calculateTotal(~, hand)
             total = 0;
-            aces = 0;
+            aces = 0;  % Count aces separately
+
             for i = 1:length(hand)
                 card = hand{i};
-                rank = card(1);
+                rank = card(1); % Get the rank (the first character)
+
+                % Check the value of the rank
                 if any(strcmp(rank, {'J', 'Q', 'K'}))
-                    total = total + 10;
+                    total = total + 10; % Face cards are worth 10
                 elseif strcmp(rank, 'A')
-                    total = total + 11;
-                    aces = aces + 1;
+                    aces = aces + 1; % Count Aces
+                    total = total + 11; % Assume Ace is 11 for now
                 else
-                    total = total + str2double(rank);
+                    total = total + str2double(rank); % Numeric cards are their face value
                 end
             end
+
+            % Adjust for Aces if total exceeds 21
             while total > 21 && aces > 0
-                total = total - 10;
-                aces = aces - 1;
+                total = total - 10; % Count Ace as 1 instead of 11
+                aces = aces - 1;  % Reduce the count of Aces
             end
         end
 
@@ -135,30 +222,32 @@ classdef BlackjackTest
             obj.displayCurrentHands();
 
             if playerTotal > 21
-                obj.displayMessageGame = 'You busted! Dealer Wins!';
+                obj.gameWindow = 'You busted! Dealer Wins!';
             elseif dealerTotal > 21
-                obj.displayMessageGame = 'Dealer Busts! Player Wins!';
+                obj.gameWindow = 'Dealer Busts! Player Wins!';
                 obj.balance = obj.balance + obj.betAmount;
             elseif playerTotal > dealerTotal
-                obj.displayMessageGame = 'Player Wins!';
+                obj.gameWindow = 'Player Wins!';
                 obj.balance = obj.balance + obj.betAmount;
             elseif playerTotal < dealerTotal
-                obj.displayMessageGame = 'Dealer Wins!';
+                obj.gameWindow = 'Dealer Wins!';
             else
-                obj.displayMessageGame = 'It''s a Tie! Nothing happens.';
+                obj.gameWindow = 'It''s a Tie! Nothing happens.';
             end
 
+            obj.updateGameWindow();
             obj.gameStarted = false;
         end
 
         % Method to handle the Stand button press
         function obj = onStandButtonPress(obj)
             if obj.gameStarted
-                obj.displayMessageGame = 'Player stands. Dealer\''s turn...';
+                obj.gameWindow = 'Player stands. Dealer\''s turn...';
                 pause(1); % Small pause for effect
                 obj = obj.onDealerTurn(); % Trigger dealer’s turn when player stands
             else
-                obj.displayMessageGame = 'Please start the game before standing.';
+                obj.gameWindow = 'Please start the game before standing.';
+                obj.updateGameWindow();
             end
         end
 
