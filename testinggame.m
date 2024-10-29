@@ -1,14 +1,11 @@
-% Main.m
-% Launch the Blackjack GUI and start the game
+% Main file to run the Blackjack game
+function testinggame()
+    % Create an instance of your BlackjackTest class
+    game = BlackjackTest();
 
-% Create an instance of the GUI
-%%app = GuiTesting();
+    % Create an instance of the app1 GUI
+    myApp = app1(); 
 
-% Pause briefly to allow the GUI to initialize fully
-%%pause(0.5);
-
-% Create an instance of the BlackjackTest game, passing in the GUI instance
-game = BlackjackTest();
-
-% Start the game loop
-game.play();
+    % Start the game loop with the app instance
+    game.play(myApp);  % Pass the app instance to the play method
+end
