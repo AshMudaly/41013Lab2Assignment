@@ -14,7 +14,11 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
+<<<<<<< Updated upstream
             %self.gui = app1();
+=======
+            self.gui = app1();
+>>>>>>> Stashed changes
         end
     end
     
