@@ -20,7 +20,7 @@ classdef BlackjackTest
             obj.playerHand = {};
             obj.dealerHand = {};
             obj.gameStarted = false; % Initialize gameStarted flag
-            obj.showWelcomeMessage(); % Show welcome message upon initialization
+            % obj.showWelcomeMessage(); % Show welcome message upon initialization
         end
 
         function updateGameWindow(obj)
@@ -40,13 +40,13 @@ classdef BlackjackTest
             deck = deck(randperm(length(deck))); % Shuffle deck
         end
 
-        % Method to show a welcome message
-        function showWelcomeMessage(obj)
-            obj.gameWindow = 'Welcome to Blackjack!';
-            obj.updateGameWindow();
-        end
+        % % Method to show a welcome message
+        % function showWelcomeMessage(obj)
+        %     obj.gameWindow = 'Welcome to Blackjack!';
+        %     obj.updateGameWindow();
+        % end
 
-        function play(obj, myApp)
+        function play(obj, app)
             % This method will control the main game loop
             while true
                 % Display the current balance
@@ -54,7 +54,7 @@ classdef BlackjackTest
                 obj.updateGameWindow();
 
                 % Get player bet amount from the app UI
-                obj.betAmount = myApp.BetAmountField.Value; % Adjust according to your UI field name
+                obj.betAmount = app.BetAmountField.Value; % Adjust according to your UI field name
 
                 % Check if the bet amount is valid
                 if obj.betAmount > obj.balance || obj.betAmount <= 0
@@ -212,31 +212,6 @@ classdef BlackjackTest
         % Method to convert hand to a string for display
         function str = handToString(~, hand)
             str = strjoin(hand, ', ');
-        end
-
-        % Method to determine the winner and update the balance
-        function obj = determineWinner(obj)
-            playerTotal = obj.calculateTotal(obj.playerHand);
-            dealerTotal = obj.calculateTotal(obj.dealerHand);
-
-            obj.displayCurrentHands();
-
-            if playerTotal > 21
-                obj.gameWindow = 'You busted! Dealer Wins!';
-            elseif dealerTotal > 21
-                obj.gameWindow = 'Dealer Busts! Player Wins!';
-                obj.balance = obj.balance + obj.betAmount;
-            elseif playerTotal > dealerTotal
-                obj.gameWindow = 'Player Wins!';
-                obj.balance = obj.balance + obj.betAmount;
-            elseif playerTotal < dealerTotal
-                obj.gameWindow = 'Dealer Wins!';
-            else
-                obj.gameWindow = 'It''s a Tie! Nothing happens.';
-            end
-
-            obj.updateGameWindow();
-            obj.gameStarted = false;
         end
 
         % Method to handle the Stand button press

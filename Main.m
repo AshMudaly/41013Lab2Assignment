@@ -1,23 +1,42 @@
 classdef Main < handle
-%#ok<*NASGU>
-%#ok<*NOPRT>
-%#ok<*TRYNC>
+    %#ok<*NASGU>
+    %#ok<*NOPRT>
+    %#ok<*TRYNC>
+    
     properties
         gui % Gui Object
         game % Blakcjack game engine object
     end
 
     methods
-        %% Contructor
+        %% Constructor
         function self = Main()
             clf
             clc
             hold on
             self.Environment();
+<<<<<<< HEAD
             %self.game = BlackjackTest();
             self.gui = app1();
+=======
+            self.robots = Controller();
+            self.startBlackjackGame();
+        end
+        
+        %% Method to start the Blackjack game and GUI
+        function startBlackjackGame(~)
+            % Create an instance of your BlackjackTest class
+            game = BlackjackTest();
+
+            % Create an instance of the app1 GUI
+            myApp = app1(); 
+
+            % Start the game loop
+            game.play(myApp);  % Pass the app instance to the play method
+>>>>>>> 19110b3b6ea5bb5816aff4de77d1f2f717b9fffe
         end
     end
+    
     methods(Static)
         %% basic game
         %simple game to demonstrate betting and the robots moving from the
@@ -41,7 +60,6 @@ classdef Main < handle
             blackjackVerts = [get(blackjackTable,'Vertices'), ones(size(get(blackjackTable,'Vertices'),1),1)]*trotx(pi/2);
             set(blackjackTable,'Vertices',blackjackVerts(:,1:3))
 
-            
             dealerChip = PlaceObject('dealerChip.ply', [0,-1.15,0.64]);
 
             stoolPositions = [0,0,-0.2;
@@ -77,6 +95,7 @@ classdef Main < handle
                 ,'CData',imread('darkRedBrickWall.jpg') ...
                 ,'FaceColor','texturemap');
         end
+        
         function BetAndReturn(self)
             self.robots.PlayerBet(self.robots)
             self.robots.PickUpChipDealer(self.robots)
