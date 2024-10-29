@@ -7,9 +7,9 @@ classdef BlackjackTest
         playerHand;
         dealerHand;
         balance;
-        betAmount;
+        % betAmount;
         gameStarted;
-        updateUIA
+        updateAppUI;
     end
 
     methods
@@ -17,45 +17,29 @@ classdef BlackjackTest
             obj.cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'};
             obj = obj.shuffleDeck();
             obj.gameStarted = false;
-            obj.balance = 500;  % Initialize starting balance
+            obj.balance = initialBalance;  % Set the balance to the provided initial balance
         end
 
         function play(obj, app)
-            obj.displayMessageGame(app, 'Welcome to Blackjack! Good luck!');
+            % Main game loop
+            obj.gameStarted = true;
+            app.GameWindowTextbox.Value = {'Welcome to Blackjack! Good luck!'};
 
+            % Run the game loop while the balance is greater than 0
             while obj.balance > 0
                 obj.playerHand = [];
                 obj.dealerHand = [];
 
-                bet = obj.placeBet(app);
-                if bet == 0
-                    continue;  % Skip to next iteration if bet is invalid
-                end
+                % Place the bet (no output assignment)
+                obj.placeBet(app);
 
-                obj.displayMessageGame(app, ['You bet $', num2str(bet)]);
+                % Wait for player to play (hit or stand)
+                uiwait(app.UIFigure);  % This waits for the user to hit "Hit" or "Stand" button
+            end
 
-                if length(obj.deck) < 15
-                    obj = obj.shuffleDeck();  % Reshuffle if deck is low
-                end
-
-                obj = obj.dealCard(app, 'player', 2);
-                obj = obj.dealCard(app, 'dealer', 2);
-                app.HitButton.Enable = 'on';
-                app.StandButton.Enable = 'on';
-
-                uiwait(app.UIFigure);  % Wait for user action
-
-                obj.dealerTurn(bet, app);
-                obj.updateAppUI(app);
-
-                if obj.balance > 0
-                    cont = input('Do you want to play again? (y/n): ', 's');
-                    if strcmp(cont, 'n')
-                        break;  % Exit loop if user does not want to continue
-                    end
-                else
-                    obj.displayMessageGame(app, 'You have run out of money! Game over.');
-                end
+            % End of game message
+            if obj.balance <= 0
+                app.GameWindowTextbox.Value = {'Game over! You have run out of money.'};
             end
         end
 
@@ -65,18 +49,24 @@ classdef BlackjackTest
             obj.deck = obj.deck(randperm(length(obj.deck)));
         end
 
-        function placeBet(obj, app)
-            bet = app.BetAmountTextbox.Value;
-            if bet < 1 || bet > obj.balance
-                uialert(app.UIFigure, 'Invalid bet! Please enter a valid bet.', 'Error');
-            else
-                obj.betAmount = bet;
-                obj.balance = obj.balance - bet;
-                app.BalanceTextBox.Value = obj.balance;  % Update balance in UI
-                obj.dealInitialCards(app);  % Deal initial cards
-                app.GameWindowTextbox.Value = {'Bet placed. Dealing cards...'};  % Update game window
+        function placeBet(app)
+            betAmount = app.BetAmountTextbox.Value;  % Get the bet amount
+            currentBalance = app.Game.balance;  % Get current balance from the game instance
+
+            % Validate the bet amount
+            if betAmount <= 0 || betAmount > currentBalance
+                uialert(app.UIFigure, 'Invalid bet! Please enter a valid bet within your balance.', 'Error');
+                return;  % Exit the method if the bet is invalid
             end
+
+            % Update game state with the bet amount
+            app.Game.balance = currentBalance - betAmount;  % Deduct the bet from the balance
+
+            % Update UI to reflect the new balance
+            app.BalanceTextBox.Value = app.Game.balance;  % Update balance display
+            app.updateAppUI();  % Ensure UI reflects the new game state
         end
+
 
         function obj = dealInitialCards(obj, app)
             obj.playerHand = [];
@@ -165,21 +155,21 @@ classdef BlackjackTest
             handString = strjoin(obj.cardNames(hand), ', ');
         end
 
-        function displayMessageGame(obj, app, message)
+        function displayMessageGame(~, app, message)
             if obj.gameStarted
                 currentMessages = app.GameWindowTextbox.Value;  % Get current messages
                 app.GameWindowTextbox.Value = [currentMessages; {message}];  % Append message to game window
             end
         end
 
-        function displayMessagePlayer(obj, app, message)
+        function displayMessagePlayer(~, app, message)
             % if obj.gameStarted
             currentMessages = app.PlayerHandTextbox.Value;  % Get current messages
             app.PlayerHandTextbox.Value = [currentMessages; {message}];  % Append message to game window
             % end
         end
 
-        function displayMessageDealer(obj, app, message)
+        function displayMessageDealer(~, app, message)
             % if obj.gameStarted
             currentMessages = app.DealerHandTextbox.Value;  % Get current messages
             app.DealerHandTextbox.Value = [currentMessages; {message}];  % Append message to game window
@@ -187,4 +177,3 @@ classdef BlackjackTest
         end
     end
 end
-

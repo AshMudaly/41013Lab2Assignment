@@ -7,5 +7,5 @@ function testinggame()
     myApp = app1(); 
 
     % Start the game loop
-    game.play(myApp);  % Pass the app instance to the play method
+     game.play(myApp);  % Pass the app instance to the play method
 end

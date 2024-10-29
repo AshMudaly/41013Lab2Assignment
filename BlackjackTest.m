@@ -1,176 +1,192 @@
 classdef BlackjackTest
     properties
-        deck;
-        cardNames;
-        playerHandString;
-        dealerHandString;
-        playerHand;
-        dealerHand;
-        balance;
-        betAmount;
-        gameStarted;
-        updateAppUI;
+        playerHand % Cell array to store player's hand
+        dealerHand % Cell array to store dealer's hand
+        deck       % Cell array representing the deck of cards
+        balance    % Player's balance
+        betAmount  % Current bet amount
+        displayMessageGame % Messages to display in the game window
+        gameStarted % Flag to indicate if the game has started
     end
-
+    
     methods
+        % Constructor
         function obj = BlackjackTest()
-            obj.cardNames = {'Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King'};
-            obj = obj.shuffleDeck();
-            obj.gameStarted = false;
-            obj.balance = 500;  % Initialize starting balance
+            obj.balance = 500; % Starting balance
+            obj.deck = obj.createDeck(); % Create a new deck
+            obj.displayMessageGame = '';
+            obj.playerHand = {};
+            obj.dealerHand = {};
+            obj.gameStarted = false; % Initialize gameStarted flag
+            obj.showWelcomeMessage(); % Show welcome message upon initialization
         end
-
-        function play(obj, app)
-            % Main game loop
-            obj.gameStarted = true;
-            app.GameWindowTextbox.Value = {'Welcome to Blackjack! Good luck!'};
-
-            % Run the game loop while the balance is greater than 0
-            while obj.balance > 0
-                obj.playerHand = [];
-                obj.dealerHand = [];
-
-                % Place the bet (no output assignment)
-                obj.placeBet(app);
-
-                % Wait for player to play (hit or stand)
-                uiwait(app.UIFigure);  % This waits for the user to hit "Hit" or "Stand" button
+        
+        % Method to create a standard deck of cards
+        function deck = createDeck(~)
+            suits = {'Hearts', 'Diamonds', 'Clubs', 'Spades'};
+            ranks = {'2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'};
+            deck = {};
+            for suit = suits
+                for rank = ranks
+                    deck{end+1} = [rank{1}, ' of ', suit{1}]; % Create card
+                end
             end
-
-            % End of game message
-            if obj.balance <= 0
-                app.GameWindowTextbox.Value = {'Game over! You have run out of money.'};
-            end
+            deck = deck(randperm(length(deck))); % Shuffle deck
         end
-
-        function obj = shuffleDeck(obj)
-            deckValues = [1:10, 10, 10, 10];
-            obj.deck = repmat(deckValues, 1, 4);
-            obj.deck = obj.deck(randperm(length(obj.deck)));
+        
+        % Method to show a welcome message
+        function showWelcomeMessage(obj)
+            obj.displayMessageGame = 'Welcome to Blackjack!'; % Set welcome message
+            disp(obj.displayMessageGame); % Display the welcome message in the console
         end
-
-        function placeBet(obj, app)
-            % Ensure a valid bet
-            bet = app.BetAmountTextbox.Value;
-            if bet < 1 || bet > obj.balance
-                uialert(app.UIFigure, 'Invalid bet! Please enter a valid bet.', 'Error');
-            else 
-                obj.betAmount = bet;
-                obj.balance = obj.balance - bet;
-                app.BalanceTextBox.Value = obj.balance;  % Update balance in UI
-                obj.dealInitialCards(app);  % Deal initial cards
-                app.GameWindowTextbox.Value = {'Bet placed. Dealing cards...'};
+        
+        % Method to deal cards
+        function obj = dealCards(obj)
+            if ~obj.gameStarted % Only deal if the game has not started
+                % Deal two cards each to player and dealer
+                obj = obj.dealCard('player', 2);
+                obj = obj.dealCard('dealer', 2);
+                obj.gameStarted = true; % Set gameStarted to true after dealing
+                obj.displayCurrentHands(); % Show the current hands after dealing
+            else
+                disp('The game has already started. Please choose to hit or stand.'); % Inform player if they try to start again
             end
         end
 
-
-        function obj = dealInitialCards(obj, app)
-            obj.playerHand = [];
-            obj.dealerHand = [];
-
-            obj = obj.dealCard(app, 'player', 2);
-            obj = obj.dealCard(app, 'dealer', 2);
-
-            app.HitButton.Enable = 'on';
-            app.StandButton.Enable = 'on';
-        end
-
-        function obj = dealCard(obj, app, target, numCards)
-            numCards = min(numCards, length(obj.deck));
-            dealtCards = obj.deck(1:numCards);
-            obj.deck(1:numCards) = [];  % Remove cards from deck
-
-            if strcmp(target, 'player')
-                obj.playerHand = [obj.playerHand, dealtCards];
-                obj.playerHandString = obj.handToString(obj.playerHand);
-                app.PlayerHandTextbox.Value = {obj.playerHandString};
-                app.GameWindowTextbox.Value = ['Player was dealt: ', obj.cardNames{dealtCards}];
-            elseif strcmp(target, 'dealer')
-                obj.dealerHand = [obj.dealerHand, dealtCards];
-                obj.dealerHandString = obj.handToString(obj.dealerHand);
-                app.DealerHandTextbox.Value = {obj.dealerHandString};
-                app.GameWindowTextbox.Value = ['Dealer was dealt: ', obj.cardNames{dealtCards}];
+        % Method to deal a card
+        function [hand, obj] = dealCard(obj, who, numCards)
+            if strcmp(who, 'player')
+                hand = obj.playerHand;
+            else
+                hand = obj.dealerHand;
+            end
+            
+            for i = 1:numCards
+                if isempty(obj.deck)
+                    obj.displayMessageGame = 'No more cards in the deck!';
+                    return;
+                end
+                card = obj.deck{end}; % Get the last card from the deck
+                obj.deck(end) = [];    % Remove the card from the deck
+                hand{end+1} = card;    % Add card to the hand
+            end
+            
+            if strcmp(who, 'player')
+                obj.playerHand = hand;
+            else
+                obj.dealerHand = hand;
             end
         end
-
-        function hit(obj, app)
-            obj = obj.dealCard(app, 'player', 1);
-
-            if obj.calculateTotal(obj.playerHand) > 21
-                app.GameWindowTextbox.Value = {'Bust! You lose.'};
-                obj.balance = obj.balance - obj.betAmount;
-                app.BalanceTextBox.Value = obj.balance;  % Update balance in UI
-                app.HitButton.Enable = 'off';
-                app.StandButton.Enable = 'off';
-            end
+        
+        % Method to display current hands along with their totals
+        function displayCurrentHands(obj)
+           playerTotal = obj.calculateTotal(obj.playerHand);
+    dealerTotal = obj.calculateTotal(obj.dealerHand);
+    
+    % Format the output strings
+    playerHandStr = ['Your cards: ', obj.handToString(obj.playerHand), ' | Total: ', num2str(playerTotal)];
+    dealerHandStr = ['Dealer\''s cards: ', obj.handToString(obj.dealerHand), ' | Total: ', num2str(dealerTotal)];
+    
+    % Display in console (you can replace this with your UI display logic)
+    disp(playerHandStr);
+    disp(dealerHandStr);
+    
+    % You might want to set these strings to your UI properties here
+    obj.displayMessageGame = playerHandStr; % Update the display message for player
         end
 
-        function stand(obj, app)
-            app.HitButton.Enable = 'off';
-            app.StandButton.Enable = 'off';
-            obj.dealerTurn(app);
-        end
-
-        function dealerTurn(obj, app)
-            dealerTotal = obj.calculateTotal(obj.dealerHand);
-
-            while dealerTotal < 17
-                obj = obj.dealCard(app, 'dealer', 1);
-                dealerTotal = obj.calculateTotal(obj.dealerHand);
-            end
-
-            obj.checkOutcome(app);
-        end
-
+        % Method to calculate the total value of a hand
         function total = calculateTotal(~, hand)
-            total = sum(hand);
-            aceCount = sum(hand == 1);
-            while total <= 11 && aceCount > 0
-                total = total + 10;
-                aceCount = aceCount - 1;
+            total = 0;
+            aces = 0;
+            for i = 1:length(hand)
+                card = hand{i};
+                rank = card(1); % Get the rank of the card
+                if any(strcmp(rank, {'J', 'Q', 'K'}))
+                    total = total + 10; % Face cards are worth 10
+                elseif strcmp(rank, 'A')
+                    total = total + 11; % Aces initially worth 11
+                    aces = aces + 1;    % Count aces
+                else
+                    total = total + str2double(rank); % Add numeric value
+                end
+            end
+            
+            % Adjust for aces if total exceeds 21
+            while total > 21 && aces > 0
+                total = total - 10; % Count ace as 1 instead of 11
+                aces = aces - 1;
             end
         end
-
-        function checkOutcome(obj, app)
+        
+        % Method to convert hand to a string for display
+        function str = handToString(~, hand)
+            str = strjoin(hand, ', '); % Join card strings
+        end
+        
+        % Method to determine the winner and update the balance
+        function obj = determineWinner(obj)
             playerTotal = obj.calculateTotal(obj.playerHand);
             dealerTotal = obj.calculateTotal(obj.dealerHand);
-
-            if dealerTotal > 21 || playerTotal > dealerTotal
-                app.GameWindowTextbox.Value = {'You win!'};
-                obj.balance = obj.balance + 2 * obj.betAmount;
-            elseif playerTotal == dealerTotal
-                app.GameWindowTextbox.Value = {'It''s a tie!'};
-                obj.balance = obj.balance + obj.betAmount;
-            else
-                app.GameWindowTextbox.Value = {'Dealer wins.'};
+            
+            obj.displayCurrentHands(); % Display hands before announcing the result
+            
+            if playerTotal > 21 % Player busts
+                obj.displayMessageGame = 'You busted! Dealer Wins!';
+                disp(obj.displayMessageGame);
+                % Dealer wins; no change in balance
+            elseif dealerTotal > 21 % Dealer busts
+                obj.displayMessageGame = 'Dealer Busts! Player Wins!';
+                disp(obj.displayMessageGame);
+                obj.balance = obj.balance + obj.betAmount; % Return bet to player
+            elseif playerTotal > dealerTotal % Player wins
+                obj.displayMessageGame = 'Player Wins!';
+                disp(obj.displayMessageGame);
+                obj.balance = obj.balance + obj.betAmount; % Return bet to player
+            elseif playerTotal < dealerTotal % Dealer wins
+                obj.displayMessageGame = 'Dealer Wins!';
+                disp(obj.displayMessageGame);
+                % No change in balance
+            else % It's a tie
+                obj.displayMessageGame = 'It''s a Tie! Nothing happens.';
+                disp(obj.displayMessageGame);
+                % No change in balance
             end
-            app.BalanceTextBox.Value = obj.balance;
+            
+            obj.gameStarted = false; % Reset game state for the next round
         end
-
-        function handString = handToString(obj, hand)
-            handString = strjoin(obj.cardNames(hand), ', ');
+        
+        % Method to handle the Start button press
+        function obj = onStartButtonPress(obj)
+            obj = obj.dealCards(); % Deal the cards when the start button is pressed
         end
-
-        function displayMessageGame(obj, app, message)
+        
+        % Method to handle the Hit button press
+        function obj = onHitButtonPress(obj)
             if obj.gameStarted
-                currentMessages = app.GameWindowTextbox.Value;  % Get current messages
-                app.GameWindowTextbox.Value = [currentMessages; {message}];  % Append message to game window
+                obj = obj.dealCard('player', 1); % Deal one card to the player
+                obj.displayCurrentHands(); % Show the current hands after hitting
+                playerTotal = obj.calculateTotal(obj.playerHand);
+                if playerTotal > 21
+                    obj.displayMessageGame = 'You busted! Dealer Wins!';
+                    disp(obj.displayMessageGame);
+                    obj.gameStarted = false; % Reset game state
+                end
+            else
+                disp('Please start the game before hitting.'); % Inform player if they try to hit without starting
             end
         end
-
-        function displayMessagePlayer(obj, app, message)
-            % if obj.gameStarted
-            currentMessages = app.PlayerHandTextbox.Value;  % Get current messages
-            app.PlayerHandTextbox.Value = [currentMessages; {message}];  % Append message to game window
-            % end
-        end
-
-        function displayMessageDealer(obj, app, message)
-            % if obj.gameStarted
-            currentMessages = app.DealerHandTextbox.Value;  % Get current messages
-            app.DealerHandTextbox.Value = [currentMessages; {message}];  % Append message to game window
-            % end
+        
+        % Method to handle the Dealer's Turn
+        function obj = onDealerTurn(obj)
+            if obj.gameStarted
+                while obj.calculateTotal(obj.dealerHand) < 17 % Dealer hits until total is 17 or higher
+                    obj = obj.dealCard('dealer', 1);
+                end
+                obj = obj.determineWinner(); % Determine winner and update balance
+            else
+                disp('Please start the game before dealer turns.'); % Inform player if they try to invoke dealer turn without starting
+            end
         end
     end
 end
-
