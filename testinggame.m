@@ -6,6 +6,6 @@ function testinggame()
     % Create an instance of the app1 GUI
     myApp = app1(); 
 
-    % Start the game loop with the app instance
+    % Start the game loop
     game.play(myApp);  % Pass the app instance to the play method
 end
