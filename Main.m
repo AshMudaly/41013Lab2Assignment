@@ -3,7 +3,8 @@ classdef Main < handle
 %#ok<*NOPRT>
 %#ok<*TRYNC>
     properties
-        robots % Constructor for controller class
+        gui % Gui Object
+        game % Blakcjack game engine object
     end
 
     methods
@@ -13,10 +14,17 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
-            self.robots = Controller();
+            %self.game = BlackjackTest();
+            self.gui = app1();
         end
     end
     methods(Static)
+        %% basic game
+        %simple game to demonstrate betting and the robots moving from the
+        %GUI
+        function BasicGame(self)
+            
+        end
         %% Generate Environment
         function Environment()
             hold on
