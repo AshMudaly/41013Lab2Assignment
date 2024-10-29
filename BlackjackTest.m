@@ -8,7 +8,7 @@ classdef BlackjackTest
         displayMessageGame % Messages to display in the game window
         gameStarted % Flag to indicate if the game has started
     end
-    
+
     methods
         % Constructor
         function obj = BlackjackTest()
@@ -20,7 +20,7 @@ classdef BlackjackTest
             obj.gameStarted = false; % Initialize gameStarted flag
             obj.showWelcomeMessage(); % Show welcome message upon initialization
         end
-        
+
         % Method to create a standard deck of cards
         function deck = createDeck(~)
             suits = {'Hearts', 'Diamonds', 'Clubs', 'Spades'};
@@ -33,34 +33,44 @@ classdef BlackjackTest
             end
             deck = deck(randperm(length(deck))); % Shuffle deck
         end
-        
+
         % Method to show a welcome message
         function showWelcomeMessage(obj)
-            obj.displayMessageGame = 'Welcome to Blackjack!'; % Set welcome message
-            disp(obj.displayMessageGame); % Display the welcome message in the console
+            obj.displayMessageGame = 'Welcome to Blackjack!';
         end
-        
-        % Method to deal cards
+
+        % Method to deal inital cards
         function obj = dealCards(obj)
             if ~obj.gameStarted % Only deal if the game has not started
                 % Deal two cards each to player and dealer
-                obj = obj.dealCard('player', 2);
-                obj = obj.dealCard('dealer', 2);
+                obj = obj.hitCard('player', 2);
+                obj = obj.hitCard('dealer', 2);
                 obj.gameStarted = true; % Set gameStarted to true after dealing
                 obj.displayCurrentHands(); % Show the current hands after dealing
             else
-                disp('The game has already started. Please choose to hit or stand.'); % Inform player if they try to start again
+                obj.displayMessageGame = 'The game has already started. Please choose to hit or stand.';
             end
         end
 
         % Method to deal a card
-        function [hand, obj] = dealCard(obj, who, numCards)
+        function [hand, obj] = hitCard(obj, who, numCards)
             if strcmp(who, 'player')
                 hand = obj.playerHand;
+                % Check if the player's hand total is already 21
+                if obj.calculateTotal(hand) == 21
+                    obj.displayMessageGame = 'You have 21! No more hits allowed.';
+                    return;
+                end
             else
                 hand = obj.dealerHand;
             end
-            
+
+            % Check if the hand already has 5 cards
+            if length(hand) + numCards > 5
+                obj.displayMessageGame = sprintf('Cannot deal more than 5 cards to the %s!', who);
+                return;
+            end
+
             for i = 1:numCards
                 if isempty(obj.deck)
                     obj.displayMessageGame = 'No more cards in the deck!';
@@ -70,29 +80,24 @@ classdef BlackjackTest
                 obj.deck(end) = [];    % Remove the card from the deck
                 hand{end+1} = card;    % Add card to the hand
             end
-            
+
             if strcmp(who, 'player')
                 obj.playerHand = hand;
             else
                 obj.dealerHand = hand;
             end
         end
-        
+
         % Method to display current hands along with their totals
         function displayCurrentHands(obj)
-           playerTotal = obj.calculateTotal(obj.playerHand);
-    dealerTotal = obj.calculateTotal(obj.dealerHand);
-    
-    % Format the output strings
-    playerHandStr = ['Your cards: ', obj.handToString(obj.playerHand), ' | Total: ', num2str(playerTotal)];
-    dealerHandStr = ['Dealer\''s cards: ', obj.handToString(obj.dealerHand), ' | Total: ', num2str(dealerTotal)];
-    
-    % Display in console (you can replace this with your UI display logic)
-    disp(playerHandStr);
-    disp(dealerHandStr);
-    
-    % You might want to set these strings to your UI properties here
-    obj.displayMessageGame = playerHandStr; % Update the display message for player
+            playerTotal = obj.calculateTotal(obj.playerHand);
+            dealerTotal = obj.calculateTotal(obj.dealerHand);
+
+            playerHandStr = ['Your cards: ', obj.handToString(obj.playerHand), ' | Total: ', num2str(playerTotal)];
+            dealerHandStr = ['Dealer''s cards: ', obj.handToString(obj.dealerHand), ' | Total: ', num2str(dealerTotal)];
+
+            % Update displayMessageGame for hands display
+            obj.displayMessageGame = [playerHandStr, '\n', dealerHandStr];
         end
 
         % Method to calculate the total value of a hand
@@ -101,92 +106,88 @@ classdef BlackjackTest
             aces = 0;
             for i = 1:length(hand)
                 card = hand{i};
-                rank = card(1); % Get the rank of the card
+                rank = card(1);
                 if any(strcmp(rank, {'J', 'Q', 'K'}))
-                    total = total + 10; % Face cards are worth 10
+                    total = total + 10;
                 elseif strcmp(rank, 'A')
-                    total = total + 11; % Aces initially worth 11
-                    aces = aces + 1;    % Count aces
+                    total = total + 11;
+                    aces = aces + 1;
                 else
-                    total = total + str2double(rank); % Add numeric value
+                    total = total + str2double(rank);
                 end
             end
-            
-            % Adjust for aces if total exceeds 21
             while total > 21 && aces > 0
-                total = total - 10; % Count ace as 1 instead of 11
+                total = total - 10;
                 aces = aces - 1;
             end
         end
-        
+
         % Method to convert hand to a string for display
         function str = handToString(~, hand)
-            str = strjoin(hand, ', '); % Join card strings
+            str = strjoin(hand, ', ');
         end
-        
+
         % Method to determine the winner and update the balance
         function obj = determineWinner(obj)
             playerTotal = obj.calculateTotal(obj.playerHand);
             dealerTotal = obj.calculateTotal(obj.dealerHand);
-            
-            obj.displayCurrentHands(); % Display hands before announcing the result
-            
-            if playerTotal > 21 % Player busts
+
+            obj.displayCurrentHands();
+
+            if playerTotal > 21
                 obj.displayMessageGame = 'You busted! Dealer Wins!';
-                disp(obj.displayMessageGame);
-                % Dealer wins; no change in balance
-            elseif dealerTotal > 21 % Dealer busts
+            elseif dealerTotal > 21
                 obj.displayMessageGame = 'Dealer Busts! Player Wins!';
-                disp(obj.displayMessageGame);
-                obj.balance = obj.balance + obj.betAmount; % Return bet to player
-            elseif playerTotal > dealerTotal % Player wins
+                obj.balance = obj.balance + obj.betAmount;
+            elseif playerTotal > dealerTotal
                 obj.displayMessageGame = 'Player Wins!';
-                disp(obj.displayMessageGame);
-                obj.balance = obj.balance + obj.betAmount; % Return bet to player
-            elseif playerTotal < dealerTotal % Dealer wins
+                obj.balance = obj.balance + obj.betAmount;
+            elseif playerTotal < dealerTotal
                 obj.displayMessageGame = 'Dealer Wins!';
-                disp(obj.displayMessageGame);
-                % No change in balance
-            else % It's a tie
-                obj.displayMessageGame = 'It''s a Tie! Nothing happens.';
-                disp(obj.displayMessageGame);
-                % No change in balance
-            end
-            
-            obj.gameStarted = false; % Reset game state for the next round
-        end
-        
-        % Method to handle the Start button press
-        function obj = onStartButtonPress(obj)
-            obj = obj.dealCards(); % Deal the cards when the start button is pressed
-        end
-        
-        % Method to handle the Hit button press
-        function obj = onHitButtonPress(obj)
-            if obj.gameStarted
-                obj = obj.dealCard('player', 1); % Deal one card to the player
-                obj.displayCurrentHands(); % Show the current hands after hitting
-                playerTotal = obj.calculateTotal(obj.playerHand);
-                if playerTotal > 21
-                    obj.displayMessageGame = 'You busted! Dealer Wins!';
-                    disp(obj.displayMessageGame);
-                    obj.gameStarted = false; % Reset game state
-                end
             else
-                disp('Please start the game before hitting.'); % Inform player if they try to hit without starting
+                obj.displayMessageGame = 'It''s a Tie! Nothing happens.';
+            end
+
+            obj.gameStarted = false;
+        end
+
+        % Method to handle the Stand button press
+        function obj = onStandButtonPress(obj)
+            if obj.gameStarted
+                obj.displayMessageGame = 'Player stands. Dealer\''s turn...';
+                pause(1); % Small pause for effect
+                obj = obj.onDealerTurn(); % Trigger dealer’s turn when player stands
+            else
+                obj.displayMessageGame = 'Please start the game before standing.';
             end
         end
-        
+
         % Method to handle the Dealer's Turn
         function obj = onDealerTurn(obj)
             if obj.gameStarted
-                while obj.calculateTotal(obj.dealerHand) < 17 % Dealer hits until total is 17 or higher
-                    obj = obj.dealCard('dealer', 1);
+                dealerTotal = obj.calculateTotal(obj.dealerHand);
+
+                % Dealer continues to hit until they reach at least 18 or bust
+                while dealerTotal < 18
+                    obj = obj.hitCard('dealer', 1);
+                    dealerTotal = obj.calculateTotal(obj.dealerHand);
+                    pause(1); % Pause between each card for better user experience
+                    obj.displayCurrentHands();
                 end
-                obj = obj.determineWinner(); % Determine winner and update balance
-            else
-                disp('Please start the game before dealer turns.'); % Inform player if they try to invoke dealer turn without starting
+
+                % Additional draw for a 70% win rate, as discussed
+                playerTotal = obj.calculateTotal(obj.playerHand);
+                if dealerTotal <= 21 && dealerTotal < playerTotal && dealerTotal < 19
+                    obj = obj.hitCard('dealer', 1);
+                    dealerTotal = obj.calculateTotal(obj.dealerHand);
+                    pause(1); % Additional pause for dramatic effect
+                    obj.displayCurrentHands();
+                end
+
+                % After the dealer’s turn, determine the winner and display the outcome
+                obj = obj.determineWinner();
             end
         end
     end
 end
+
