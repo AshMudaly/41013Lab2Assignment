@@ -116,7 +116,7 @@ classdef Controller < handle
                 self.stop = 0;
             end
             while self.stop == 1
-                fprintf('intial stop\n');
+                %fprintf('intial stop\n');
                 while self.button1 == 0
                     configureCallback(self.serialObj, "terminator", @(src, event) self.ReadData(src, event));
                 end
@@ -124,7 +124,7 @@ classdef Controller < handle
                 configureCallback(self.serialObj, "terminator", @(src, event) self.ReadData(src, event));
                 while self.button1 == 0
                     while self.button2 == 3
-                        fprintf('estop reset\n');
+                        %fprintf('estop reset\n');
                         configureCallback(self.serialObj, "terminator", @(src, event) self.ReadData(src, event));
                         if self.button2 == 2
                             fprintf('start');
@@ -134,6 +134,13 @@ classdef Controller < handle
                     end
                 end
             end
+        end
+
+        function GuiEStop(stop)
+            while stop == 1
+                fprintf('while loop Controller stop');
+            end
+
         end
 
         %% Get Joint Values - Return the join value as q values, 1 x 7 matrix or 1 x 5 matrix depending on the robot specified

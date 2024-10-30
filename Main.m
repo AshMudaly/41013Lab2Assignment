@@ -5,6 +5,7 @@ classdef Main < handle
     
     properties
         gui % Gui Object
+        %robots % controller object
     end
 
     methods
@@ -14,11 +15,8 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
-<<<<<<< Updated upstream
-            %self.gui = app1();
-=======
+            %self.robots = Controller();
             self.gui = app1();
->>>>>>> Stashed changes
         end
     end
     
