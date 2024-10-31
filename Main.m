@@ -5,6 +5,7 @@ classdef Main < handle
     
     properties
         gui % Gui Object
+        %robots % controller object
     end
 
     methods
@@ -14,6 +15,7 @@ classdef Main < handle
             clc
             hold on
             self.Environment();
+            %self.robots = Controller();
             self.gui = app1();
         end
     end
