@@ -5,7 +5,7 @@ classdef BlackjackTest
         deck       % Cell array representing the deck of cards
         balance    % Player's balance
         betAmount  % Current bet amount
-        % updateGameWindow % Messages to display in the game window
+        updateGameWindow % Messages to display in the game window
         gameStarted % Flag to indicate if the game has started
         GameWindowTextbox % Update the UI component
         gameWindow
@@ -20,11 +20,9 @@ classdef BlackjackTest
             obj.playerHand = {};
             obj.dealerHand = {};
             obj.gameStarted = false; % Initialize gameStarted flag
-            % obj.showWelcomeMessage(); % Show welcome message upon initialization
-        end
+            obj.GameWindowTextbox = app.GameWindowTextbox;
 
-        function updateGameWindow(obj)
-            set(obj.GameWindowTextbox, 'String', obj.gameWindow);
+            % obj.showWelcomeMessage(); % Show welcome message upon initialization
         end
 
         % Method to create a standard deck of cards
@@ -40,6 +38,10 @@ classdef BlackjackTest
             deck = deck(randperm(length(deck))); % Shuffle deck
         end
 
+        function showWelcomeMessage(obj)
+    obj.gameWindow = 'Welcome to Blackjack!';
+    obj.updateGameWindow();
+end
         % % Method to show a welcome message
         % function showWelcomeMessage(obj)
         %     obj.gameWindow = 'Welcome to Blackjack!';

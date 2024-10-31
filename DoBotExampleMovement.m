@@ -1,3 +1,4 @@
+%% 
 clear all;
 clc;
 close all;
@@ -164,6 +165,7 @@ pause(0.3)
 %%
 test_Joint = [0,0.5,0.6,0.0];
 dobot.PublishTargetJoint(test_Joint);
+disp('running')
 
 %% Publish custom end effector pose
 end_effector_position = [0.2,0,0.05];
