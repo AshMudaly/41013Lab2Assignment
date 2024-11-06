@@ -162,7 +162,7 @@ classdef Controller < handle
         end
 
         %% Gui E Stop
-        function EStop(self)
+        function GEStop(self)
             % Check E-stop status from GUI button state
             while self.stop == 1
                 fprintf('STOP\n');
