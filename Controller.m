@@ -4,6 +4,12 @@ classdef Controller < handle
     %#ok<*TRYNC>
     properties
         player % DoBot Robot Object
+        player2
+        player3
+        player4
+        player5
+        player6
+        player7
         dealer % HitMeBot Object
         hitMeHome % HitMeBot home q posiiton
         doBotHome % DoBotMagician home q position
@@ -29,9 +35,21 @@ classdef Controller < handle
             self.playerBank = transl(-0.13,-0.38,0.64);
             self.dealerBank = transl(-0.5, -1.1, 0.64);
             self.player = DobotMagician(transl(0,-0.2,0.45)*trotz(-pi/2));
+            self.player2 = DobotMagician(transl(0.423,-0.294,0.45)*trotz(-pi/2)*trotz(deg2rad(-20)));
+            self.player3 = DobotMagician(transl(-0.423,-0.294,0.45)*trotz(-pi/2)*trotz(deg2rad(20)));
+            self.player4 = DobotMagician(transl(0.766,-0.557,0.45)*trotz(-pi/2)*trotz(deg2rad(-45)));
+            self.player5 = DobotMagician(transl(-0.766,-0.557,0.45)*trotz(-pi/2)*trotz(deg2rad(45)));
+            self.player6 = DobotMagician(transl(0.966,-0.941,0.45)*trotz(-pi/2)*trotz(deg2rad(-70)));
+            self.player7 = DobotMagician(transl(-0.966,-0.941,0.45)*trotz(-pi/2)*trotz(deg2rad(70)));
             self.dealer = HitMeBot(transl(0,-1.4,0.45)*trotz(pi/2));
             self.player.homeQ = [0,deg2rad(0),deg2rad(0),deg2rad(80),0];
             self.player.model.animate(self.player.homeQ);
+            self.player2.model.animate(self.player.homeQ);
+            self.player3.model.animate(self.player.homeQ);
+            self.player4.model.animate(self.player.homeQ);
+            self.player5.model.animate(self.player.homeQ);
+            self.player6.model.animate(self.player.homeQ);
+            self.player7.model.animate(self.player.homeQ);
             self.dealer.model.animate(self.dealer.homeQ);
             self.chipPosition = self.playerBank;
             self.chipTransform = hgtransform; % Create a transformation object
@@ -44,10 +62,10 @@ classdef Controller < handle
             set(self.card, 'Parent', self.cardTransform); % Set the PLY object as a child of the transform
             set(self.cardTransform, 'Matrix', self.cardPosition); % Set the initial position
             drawnow();
-            self.InitializeSerial();
+            %self.InitializeSerial();
             self.button1 = 1;
             self.button2 = 4;
-            self.StartReading();
+            %self.StartReading();
             self.stop = 0;
             self.reset = 0;
         end
@@ -615,6 +633,126 @@ classdef Controller < handle
 
             self.ReturnToHome(self.player);
 
+        end
+        %% all players stand
+        function AllDance(self)
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(transl(0,-0.4,0.73), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,25);
+            for i =1:25
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1);
+                %self.EStop();
+            end
+
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(transl(0.03,-0.4,0.73), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,3);
+            for i =1:3
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1);
+                %self.EStop();
+            end
+
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(transl(-0.03,-0.4,0.73), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,3);
+            for i =1:3
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1);
+                %self.EStop();
+            end
+
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(transl(0.03,-0.4,0.73), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,3);
+            for i =1:3
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1);
+                %self.EStop();
+            end
+
+            currentQ = self.GetJointState(self.player);
+            newQ = self.player.model.ikcon(transl(-0.03,-0.4,0.73), currentQ);
+            self.player.model.fkine(newQ);
+            % Create Matrix of movement between start position and end
+            % position with 25 iterations
+            moveQ = jtraj(currentQ,newQ,3);
+            for i =1:3
+                % Animate the LinearUR3e robot through each q value
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1);
+                %self.EStop();
+            end
+
+            currentQ = self.GetJointState(self.player);
+            % Create a Jtraj matrix with 25 iterations from the current
+            % position to the safe/home position
+            moveQ = jtraj(currentQ,self.player.homeQ,25);
+            % Animate to the safe/home position
+            for i = 1:25
+                self.player.model.animate(moveQ(i,:));
+                self.player2.model.animate(moveQ(i,:));
+                self.player3.model.animate(moveQ(i,:));
+                self.player4.model.animate(moveQ(i,:));
+                self.player5.model.animate(moveQ(i,:));
+                self.player6.model.animate(moveQ(i,:));
+                self.player7.model.animate(moveQ(i,:));
+                drawnow();
+                pause(0.1)
+                %self.EStop();
+            end
         end
     end
 end
