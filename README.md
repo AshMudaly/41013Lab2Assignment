@@ -44,27 +44,27 @@ Scope of Project
 * Use RMRC (robot movement end effector movement is linear and not an arc)
 * Collision avoidance
 * A GUI Where appropriate
-* Creativly use a real robot that mimics or enhances the simulation and applicaiton
+* Creatively use a real robot that mimics or enhances the simulation and application
 
 Safety Considerations
 ------------------------------------
 * System reacts to user emergency stop action (1) GUI e-stop; (1) Hardware e-stop. (Minus marks if no e-stop).
 * Trajectory reacts to simulated sensor input (e.g. light curtain) (1)
 * Trajectory reacts to a forced simulated upcoming collision (1)
-* Design a simulated environment with a strategically placed models of appropriate safety equipment (1)
+* Design a simulated environment with strategically placed models of appropriate safety equipment (1)
 
 Scaling Options
 ------------------------------------
 * Image of Card shown on GUI from the DoBot
 * More blackjack options (Split, specific chip amounts, more players)
-* Real deck simiulation with image recognition
-* Player movement of hit and check with tapping on the table
+* Real deck simulation with image recognition
+* Player movement of hit and check by tapping on the table
 
  
 De-Scoping Options
 ------------------------------------
 * Simplify betting options to 1 chip size
-* Remove all image aquisition
+* Remove all image acquisition
 * Deck of cards only gets a random number, no suit or recognition of previous card being drawn
 
 
